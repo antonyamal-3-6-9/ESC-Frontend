@@ -1,0 +1,20 @@
+.animation-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    position: relative;
+  }
+  
+  .icon {
+    font-size: 50px;
+    position: absolute;
+    transition: all 0.5s ease-in-out;
+  }
+  
+  .nft-icon { color: gold; }
+  .lock-icon { color: gray; }
+  .truck-icon { color: blue; }
+  .handshake-icon { color: green; }
+  .leaf-icon { color: darkgreen; }
+  

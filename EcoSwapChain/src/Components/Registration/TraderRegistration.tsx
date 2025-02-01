@@ -1,15 +1,125 @@
-import { TextField, Button, Box } from "@mui/material";
+import { TextField, Button, Box, CircularProgress } from "@mui/material";
 import Grid2 from "@mui/material/Grid2"; // Import Grid2
 import Container from "@mui/material/Container"; // Ensure correct import of Container
+import { useState } from "react";
 import { Google } from "@mui/icons-material";
 import RImg from "./RImg.jpg";
 import Navbar from "../NavBar/Navbar";
+import axios from "axios";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../store";
+import OTPModal from "./OTPModal";
+import BackDrop from "../Backdrop/Backdrop";
+import CollapsibleAlert from "../Alert/Alert";
+import {
+  setAlertOn,
+  setAlertSeverity,
+  setAlertMessage,
+} from "../../Redux/alertBackdropSlice";
 
 const Register = () => {
+  const apiEndpointVerify = useSelector(
+    (state: RootState) => state.apiEndpoints.otpApi
+  ); // Get the API endpoints from the store
+  const apiEndPointTrader = useSelector(
+    (state: RootState) => state.apiEndpoints.traderApi
+  );
+
+  const dispatch = useDispatch();
+
+  const [open, setOpen] = useState(false);
+  const [otp, setOtp] = useState("");
+
+  const [registerData, setRegisterData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRegisterData({ ...registerData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async () => {
+    try {
+      dispatch({ type: "SET_LOADING", payload: true });
+      const registerResponse = await axios.post(
+        `${apiEndPointTrader}register/`,
+        registerData
+      );
+      localStorage.setItem("token", registerResponse.data.token);
+      dispatch({ type: "SET_USER", payload: registerResponse.data.trader });
+      dispatch({ type: "SET_LOADING", payload: false });
+    } catch (error) {
+      console.log(error);
+      dispatch({ type: "SET_LOADING", payload: false });
+      dispatch(setAlertOn(true));
+      dispatch(setAlertSeverity("error"));
+      dispatch(setAlertMessage("Error registering user"));
+    }
+  };
+
+  const handleOtpCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log(apiEndpointVerify);
+    try {
+      dispatch({ type: "SET_LOADING", payload: true });
+      await axios.post(`${apiEndpointVerify}create/`, {
+        email: registerData.email,
+      });
+      setOpen(true);
+      dispatch({ type: "SET_LOADING", payload: false });
+      dispatch(setAlertOn(true));
+      dispatch(setAlertSeverity("info"));
+      dispatch(setAlertMessage("OTP sent to email"));
+    } catch (error) {
+      dispatch({ type: "SET_LOADING", payload: false });
+      dispatch(setAlertOn(true));
+      dispatch(setAlertSeverity("error"));
+      dispatch(setAlertMessage("Error sending OTP"));
+      console.log(error);
+    }
+  };
+
+  const handleOtpSubmit = async (otp: string) => {
+    try {
+      dispatch({ type: "SET_LOADING", payload: true });
+      await axios.post(`${apiEndpointVerify}verify/`, {
+        email: registerData.email,
+        otp: otp,
+      });
+      setOpen(false);
+      dispatch({ type: "SET_LOADING", payload: false });
+      dispatch(setAlertOn(true));
+      dispatch(setAlertSeverity("success"));
+      dispatch(setAlertMessage("OTP verified"));
+      handleSubmit();
+    } catch (error) {
+      console.log(error);
+      dispatch({ type: "SET_LOADING", payload: false });
+      dispatch(setAlertOn(true));
+      dispatch(setAlertSeverity("error"));
+      dispatch(setAlertMessage("Error verifying OTP"));
+    }
+  };
+
   return (
     <>
       <Navbar />
-
+      <BackDrop>
+        <CircularProgress color="inherit" />
+      </BackDrop>
+      <CollapsibleAlert />
+      <OTPModal
+        open={open}
+        handleClose={() => {
+          setOpen(false), setOtp("");
+        }}
+        handleSubmit={handleOtpSubmit}
+        otp={otp}
+        setOtp={setOtp}
+      />
       <Container
         maxWidth={"md"}
         disableGutters
@@ -59,6 +169,7 @@ const Register = () => {
               <form
                 noValidate
                 autoComplete="off"
+                onSubmit={handleOtpCreate}
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -69,6 +180,9 @@ const Register = () => {
                 <TextField
                   label="First Name"
                   variant="outlined"
+                  name="firstName"
+                  value={registerData.firstName}
+                  onChange={handleChange}
                   fullWidth
                   required
                   slotProps={{
@@ -90,6 +204,9 @@ const Register = () => {
                   label="Last Name"
                   variant="outlined"
                   fullWidth
+                  name="lastName"
+                  value={registerData.lastName}
+                  onChange={handleChange}
                   required
                   slotProps={{
                     inputLabel: {
@@ -111,6 +228,32 @@ const Register = () => {
                   type="email"
                   variant="outlined"
                   fullWidth
+                  name="email"
+                  value={registerData.email}
+                  onChange={handleChange}
+                  required
+                  slotProps={{
+                    inputLabel: {
+                      style: { color: "#4DA1A9" },
+                    },
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": { borderColor: "#79D7BE" },
+                      "&:hover fieldset": { borderColor: "#4DA1A9" },
+                      "&.Mui-focused fieldset": { borderColor: "#4DA1A9" },
+                    },
+                  }}
+                />
+
+                <TextField
+                  label="password"
+                  type="password"
+                  variant="outlined"
+                  fullWidth
+                  name="password"
+                  value={registerData.password}
+                  onChange={handleChange}
                   required
                   slotProps={{
                     inputLabel: {

@@ -57,7 +57,6 @@ const LandingPage = () => {
               variant="contained"
               color="primary"
               size="large"
-              href="#features"
               sx = {{
                 backgroundColor: "#2E5077"
               }}

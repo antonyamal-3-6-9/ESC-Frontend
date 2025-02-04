@@ -1,4 +1,4 @@
-import { Alert, Collapse, IconButton } from "@mui/material";
+import { Alert, Snackbar, IconButton, Fade } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ErrorIcon from "@mui/icons-material/Error";
 import WarningIcon from "@mui/icons-material/Warning";
@@ -9,9 +9,7 @@ import { RootState } from "../../store";
 import { setAlertOn } from "../../Redux/alertBackdropSlice";
 
 
-const CollapsibleAlert = ({
-
-}) => {
+const CollapsibleAlert = ({}) => {
   // Customize colors based on severity
   const getColor = (severity: string): string => {
     switch (severity) {
@@ -44,25 +42,29 @@ const CollapsibleAlert = ({
     }
   };
 
-  const alertData = useSelector((state: RootState) => state.alertBackdrop.alert); // Get the alert state from the store
+  const alertData = useSelector(
+    (state: RootState) => state.alertBackdrop.alert
+  ); // Get the alert state from the store
   const dispatch = useDispatch();
-  
+
   const handleClose = () => {
     dispatch(setAlertOn(false)); // Close the alert
-  }
+  };
 
   return (
-    <Collapse in={alertData.alertOn}>
+    <Snackbar
+      TransitionComponent={Fade}
+      anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      open={alertData.alertOn}
+      autoHideDuration={3000}
+      onClose={handleClose}
+    >
       <Alert
+        elevation={6}
+        variant="filled"
+        onClose={handleClose}
         severity={alertData.alertSeverity}
-        icon={getIcon(alertData.alertSeverity)}
-        sx={{
-          backgroundColor: getColor(alertData.alertSeverity),
-          color: "#fff",
-          "& .MuiAlert-icon": {
-            color: "#fff",
-          },
-        }}
+        sx={{ backgroundColor: getColor(alertData.alertSeverity) }}
         action={
           <IconButton
             aria-label="close"
@@ -73,10 +75,11 @@ const CollapsibleAlert = ({
             <CloseIcon fontSize="inherit" />
           </IconButton>
         }
+        icon={getIcon(alertData.alertSeverity)}
       >
         {alertData.alertMessage}
       </Alert>
-    </Collapse>
+    </Snackbar>
   );
 };
 

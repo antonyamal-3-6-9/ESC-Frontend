@@ -4,6 +4,7 @@ interface UserState {
   username: string | null;
   email: string | null;
   role: string | null;
+  active: boolean;
 }
 
 
@@ -12,6 +13,7 @@ const initialState: UserState = {
   username: null,
   email: null,
   role: null,
+  active: false,
 };
 
 // Create slice to handle user data
@@ -24,6 +26,9 @@ const userSlice = createSlice({
       state.email = action.payload.email;
       state.role = action.payload.role;
     },
+    activateUser: (state, action) => {
+      state.active = action.payload;
+    },
     clearUser: (state) => {
       state.username = null;
       state.email = null;
@@ -33,6 +38,6 @@ const userSlice = createSlice({
 });
 
 // Export the actions
-export const { setUser, clearUser } = userSlice.actions;
+export const { setUser, clearUser, activateUser } = userSlice.actions;
 
 export default userSlice.reducer;

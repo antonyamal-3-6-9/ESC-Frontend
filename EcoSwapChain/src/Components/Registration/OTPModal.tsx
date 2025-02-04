@@ -21,8 +21,9 @@ const OTPModal: React.FC<OTPModalProps> = ({ open, handleClose, handleSubmit, ot
         handleSubmit(otp);
     };
 
+
     return (
-        <Modal open={open} onClose={handleClose} slotProps={{ backdrop: BackDrop }}>
+        <Modal open={open} onClose={handleClose}>
             <Box
                 sx={{
                     position: 'absolute',
@@ -34,9 +35,11 @@ const OTPModal: React.FC<OTPModalProps> = ({ open, handleClose, handleSubmit, ot
                     border: '2px solid #000',
                     boxShadow: 24,
                     p: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
                 }}
             >
-                <Typography variant="h6" component="h2">
+                <Typography variant="h6" component="h2" textAlign={'center'}>
                     Enter OTP
                 </Typography>
                 <TextField

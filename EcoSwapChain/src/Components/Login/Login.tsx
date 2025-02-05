@@ -10,6 +10,7 @@ import { activateUser, setUser } from "../../Redux/userSlice";
 import { setLoading } from "../../Redux/alertBackdropSlice";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
+import { PublicAPI } from "../API/api";
 
 const Login = () => {
 
@@ -26,13 +27,13 @@ const Login = () => {
     // Add login logic here
     dispatch(setLoading(true));
     try {
-      const loginResponse = await axios.post("/trader/login/", {
+      const loginResponse = await PublicAPI.post("/trader/login/", {
         email: loginData.email,
         password: loginData.password,
       });
       dispatch(activateUser(true));
       dispatch(setUser(loginResponse.data.user));
-      localStorage.setItem("accessToken", loginResponse.data.access_token);
+      localStorage.setItem("token", loginResponse.data.token);
       dispatch(setLoading(false));
       navigate("/");
     } catch (error) {

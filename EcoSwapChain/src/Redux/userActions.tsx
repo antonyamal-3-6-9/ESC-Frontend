@@ -1,14 +1,20 @@
-import { ThunkDispatch } from 'redux-thunk';
-import { Action } from 'redux';
-import { setUser, activateUser, clearUser } from './userSlice';
-import { API } from '../Components/API/api';
+import { ThunkAction } from "redux-thunk";
+import { Action } from "redux";
+import { RootState } from "../store"; // Import RootState
+import { setUser, activateUser, clearUser } from "./userSlice";
+import { PublicAPI, API } from "../Components/API/api";
 
-// ✅ Define the Thunk Dispatch Type
-export type AppThunk = (dispatch: ThunkDispatch<{}, {}, Action>) => Promise<void>;
+// ✅ Define Thunk Type
+export type AppThunk<ReturnType = void> = ThunkAction<
+  ReturnType,
+  RootState,
+  unknown,
+  Action
+>;
 
 export const logout = (): AppThunk => async (dispatch) => {
     try {
-        await API.post('/auth/logout');
+        await API.post("/auth/logout/");
     } catch (error) {
         console.error("Logout API failed:", error);
     }
@@ -20,23 +26,27 @@ export const logout = (): AppThunk => async (dispatch) => {
 
 export const checkAuth = (): AppThunk => async (dispatch) => {
     try {
-        const token = localStorage.getItem('token');
-        const userRole = localStorage.getItem('role');
+        const token = localStorage.getItem("token");
+        const userRole = localStorage.getItem("role");
+
+        console.log(token, userRole);
 
         if (!token || !userRole) {
             console.warn("No token or role found, logging out...");
-            await dispatch(logout());  // ✅ No more TypeScript errors
+            dispatch(logout());
             return;
         }
 
-        const userRes = await API.get(`/auth/check/${userRole}/`);
-
+        const userRes = await API.get(`/auth/check/`, {
+        });
+        
         if (userRes.data.role === userRole) {
-            dispatch(setUser(userRes.data.user));
+            console.log(userRes.data.first_name)
+            dispatch(setUser(userRes.data));
             dispatch(activateUser(true));
         } else {
             console.warn("Role mismatch, logging out...");
-            await dispatch(logout());  // ✅ Correctly handled thunk
+            dispatch(logout());
         }
     } catch (error) {
         console.error("Authentication check failed:", error);

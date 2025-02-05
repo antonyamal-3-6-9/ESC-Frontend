@@ -21,7 +21,7 @@ const Navbar = () => {
         <Box sx={{ display: 'flex', marginLeft: 'auto' }}>
           <Link to={"/trader/login"}>
           <Button color="inherit"  sx={{ color: '#F6F4F0' }}>
-            {user.active ? user.name : "Login"}
+            {user.active ? user.username : "Login"}
           </Button>
           </Link>
           <Button color="inherit"  sx={{ color: '#F6F4F0' }}>

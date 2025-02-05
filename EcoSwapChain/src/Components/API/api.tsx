@@ -1,12 +1,5 @@
 import axios from "axios";
-import {
-  setAlertMessage,
-  setAlertOn,
-  setAlertSeverity,
-} from "../../Redux/alertBackdropSlice";
-import store
- from "../../store";
-
+import { dispatchAlert } from "./apiHelper"
 const BASE_URL = "http://127.0.0.1:8000/";
 
 // ✅ **Public API (No Authentication Needed)**
@@ -24,7 +17,7 @@ export const API = axios.create({
 // 🔹 **Attach Access Token to Requests**
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -33,12 +26,6 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🔹 **Helper Function to Dispatch Alert Actions**
-const dispatchAlert = (message: string, severity: "error" | "warning" | "info" | "success") => {
-  store.dispatch(setAlertMessage(message));
-  store.dispatch(setAlertSeverity(severity));
-  store.dispatch(setAlertOn(true));
-};
 
 // 🔹 **Global Error Handling for Both APIs**
 const handleErrorResponse = (error: any) => {
@@ -58,8 +45,6 @@ const handleErrorResponse = (error: any) => {
     case 401:
       console.error("Unauthorized:", data);
       dispatchAlert("Unauthorized. Please log in again.", "error");
-      // Redirect to login after dispatching alert (if desired)
-      window.location.href = "/login";
       break;
     case 403:
       console.error("Forbidden:", data);
@@ -96,7 +81,7 @@ API.interceptors.response.use(
 
         // Request new access token
         const refreshResponse = await PublicAPI.post(
-          "/auth/token/update",
+          "auth/token/update/",
           {},
           { withCredentials: true }
         );
@@ -108,9 +93,10 @@ API.interceptors.response.use(
         // Retry the original request
         return API(error.config);
       } catch (refreshError) {
+        alert(error)
         console.error("Session expired. Redirecting to login...");
         dispatchAlert("Session expired. Please log in again.", "error");
-        window.location.href = "/login"; // Redirect user
+        window.location.href = "/trader/login/"; // Redirect user
       }
     }
     return handleErrorResponse(error);

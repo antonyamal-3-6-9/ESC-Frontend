@@ -17,10 +17,12 @@ import {
 } from "../../Redux/alertBackdropSlice";
 import { setLoading } from "../../Redux/alertBackdropSlice";
 import { setUser, activateUser } from "../../Redux/userSlice";
+import { useNavigate } from "react-router";
 
 const Register = () => {
 
   const dispatch = useDispatch();
+  const navigate = useNavigate()
 
   const [open, setOpen] = useState(false);
   const [otp, setOtp] = useState("");
@@ -48,10 +50,17 @@ const Register = () => {
           password: registerData.password,
         }
       );
+      setRegisterData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+      })
       localStorage.setItem("token", registerResponse.data.token);
       dispatch(setUser(registerResponse.data.user));
       dispatch(activateUser(true));
       dispatch(setLoading(false));
+      navigate("/")
     } catch (error) {
       console.log(error);
       dispatch(setLoading(false));
@@ -84,6 +93,7 @@ const Register = () => {
         otp: otp,
       });
       setOpen(false);
+      setOtp("")
       dispatch(setLoading(false));
       dispatch(setAlertOn(true));
       dispatch(setAlertSeverity("success"));

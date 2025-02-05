@@ -1,13 +1,12 @@
 import { TextField, Button, Box, CircularProgress } from "@mui/material";
 import Grid2 from "@mui/material/Grid2"; // Import Grid2
 import Container from "@mui/material/Container"; // Ensure correct import of Container
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Google } from "@mui/icons-material";
 import RImg from "./RImg.jpg";
 import Navbar from "../NavBar/Navbar";
-import axios from "axios";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../store";
+import { PublicAPI } from "../API/api"
+import { useDispatch } from "react-redux";
 import OTPModal from "./OTPModal";
 import BackDrop from "../Backdrop/Backdrop";
 import CollapsibleAlert from "../Alert/Alert";
@@ -17,15 +16,9 @@ import {
   setAlertMessage,
 } from "../../Redux/alertBackdropSlice";
 import { setLoading } from "../../Redux/alertBackdropSlice";
-import { setUser } from "../../Redux/userSlice";
+import { setUser, activateUser } from "../../Redux/userSlice";
 
 const Register = () => {
-  const apiEndpointVerify = useSelector(
-    (state: RootState) => state.apiEndpoints.otpApi
-  ); // Get the API endpoints from the store
-  const apiEndPointTrader = useSelector(
-    (state: RootState) => state.apiEndpoints.traderApi
-  );
 
   const dispatch = useDispatch();
 
@@ -45,9 +38,9 @@ const Register = () => {
   
   const handleSubmit = async () => {
     try {
-      dispatch({ type: "SET_LOADING", payload: true });
-      const registerResponse = await axios.post(
-        `${apiEndPointTrader}register/`,
+      dispatch(setLoading(true));
+      const registerResponse = await PublicAPI.post(
+        `trader/register/`,
         {
           first_name: registerData.firstName,
           last_name: registerData.lastName,
@@ -56,23 +49,20 @@ const Register = () => {
         }
       );
       localStorage.setItem("token", registerResponse.data.token);
-      dispatch(setUser(registerResponse.data.trader));
+      dispatch(setUser(registerResponse.data.user));
+      dispatch(activateUser(true));
       dispatch(setLoading(false));
     } catch (error) {
       console.log(error);
       dispatch(setLoading(false));
-      dispatch(setAlertOn(true));
-      dispatch(setAlertSeverity("error"));
-      dispatch(setAlertMessage("Error registering user"));
     }
   };
 
   const handleOtpCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(apiEndpointVerify);
     try {
       dispatch(setLoading(true));
-      await axios.post(`${apiEndpointVerify}create/`, {
+      await PublicAPI.post(`verification/create/`, {
         email: registerData.email,
       });
       setOpen(true);
@@ -81,10 +71,7 @@ const Register = () => {
       dispatch(setAlertSeverity("info"));
       dispatch(setAlertMessage("OTP sent to email"));
     } catch (error) {
-      dispatch({ type: "SET_LOADING", payload: false });
-      dispatch(setAlertOn(true));
-      dispatch(setAlertSeverity("error"));
-      dispatch(setAlertMessage("Error sending OTP"));
+      dispatch(setLoading(false));
       console.log(error);
     }
   };
@@ -92,7 +79,7 @@ const Register = () => {
   const handleOtpSubmit = async (otp: string) => {
     try {
       dispatch(setLoading(true));
-      await axios.post(`${apiEndpointVerify}verify/`, {
+      await PublicAPI.post(`verification/verify/`, {
         email: registerData.email,
         otp: otp,
       });

@@ -1,27 +1,45 @@
-// actions/authActions.js
-import axios from 'axios';
-import { setUser, activateUser } from './userSlice';
-import { Dispatch } from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { Action } from 'redux';
+import { setUser, activateUser, clearUser } from './userSlice';
+import { API } from '../Components/API/api';
 
-export const checkAuth = () => async (dispatch: Dispatch) => {
-    let userRole
-    try{
-        localStorage.getItem('token')
-        userRole = localStorage.getItem('role')
-    } catch (error){
-        dispatch(activateUser(false))
+// ✅ Define the Thunk Dispatch Type
+export type AppThunk = (dispatch: ThunkDispatch<{}, {}, Action>) => Promise<void>;
+
+export const logout = (): AppThunk => async (dispatch) => {
+    try {
+        await API.post('/auth/logout');
+    } catch (error) {
+        console.error("Logout API failed:", error);
     }
 
+    dispatch(activateUser(false));
+    localStorage.clear();
+    dispatch(clearUser());
+};
+
+export const checkAuth = (): AppThunk => async (dispatch) => {
     try {
-        const userRes = await axios.get('http://localhost:5000/auth/user');
+        const token = localStorage.getItem('token');
+        const userRole = localStorage.getItem('role');
+
+        if (!token || !userRole) {
+            console.warn("No token or role found, logging out...");
+            await dispatch(logout());  // ✅ No more TypeScript errors
+            return;
+        }
+
+        const userRes = await API.get(`/auth/check/${userRole}/`);
+
         if (userRes.data.role === userRole) {
-            dispatch(setUser(userRes.data))
-            dispatch(activateUser(true))
+            dispatch(setUser(userRes.data.user));
+            dispatch(activateUser(true));
         } else {
-            dispatch(activateUser(false))
-            localStorage.clear()
+            console.warn("Role mismatch, logging out...");
+            await dispatch(logout());  // ✅ Correctly handled thunk
         }
     } catch (error) {
-        dispatch(activateUser(false))
+        console.error("Authentication check failed:", error);
+        dispatch(activateUser(false));
     }
-}
+};

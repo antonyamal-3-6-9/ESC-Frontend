@@ -12,8 +12,8 @@ function App() {
         <div>
           <Routes>
             <Route path='/' element={<><LandingPage/></>} />
-            <Route path="/trader/register" element={<Register/>} />
-            <Route path='/trader/login' element={<Login/>} />
+            <Route path="/trader/register/" element={<Register/>} />
+            <Route path='/trader/login/' element={<Login/>} />
           </Routes>
         </div>
   )

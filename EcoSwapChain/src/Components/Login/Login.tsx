@@ -4,8 +4,50 @@ import Container from "@mui/material/Container"; // Ensure correct import of Con
 import { Google } from "@mui/icons-material";
 import LImg from "./LImg.jpg"; // Replace with your image path
 import Navbar from "../NavBar/Navbar"; // Navbar component
+import axios from "axios";
+import { useState } from "react";
+import { activateUser, setUser } from "../../Redux/userSlice";
+import { setLoading } from "../../Redux/alertBackdropSlice";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 
 const Login = () => {
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const [loginData, setLoginData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleSubmit =  async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // Add login logic here
+    dispatch(setLoading(true));
+    try {
+      const loginResponse = await axios.post("/trader/login/", {
+        email: loginData.email,
+        password: loginData.password,
+      });
+      dispatch(activateUser(true));
+      dispatch(setUser(loginResponse.data.user));
+      localStorage.setItem("accessToken", loginResponse.data.access_token);
+      dispatch(setLoading(false));
+      navigate("/");
+    } catch (error) {
+      console.error("Login failed.");
+      dispatch(setLoading(false));
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginData({
+      ...loginData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
   return (
     <>
       <Navbar />
@@ -63,6 +105,7 @@ const Login = () => {
               <form
                 noValidate
                 autoComplete="off"
+                onSubmit={handleSubmit}
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -75,6 +118,9 @@ const Login = () => {
                   type="email"
                   variant="outlined"
                   fullWidth
+                  value={loginData.email}
+                  name="email"
+                  onChange={handleChange}
                   required
                   slotProps={{
                     inputLabel: {
@@ -96,6 +142,9 @@ const Login = () => {
                   type="password"
                   variant="outlined"
                   fullWidth
+                  value={loginData.password}
+                  name={"password"}
+                  onChange={handleChange}
                   required
                   slotProps={{
                     inputLabel: {

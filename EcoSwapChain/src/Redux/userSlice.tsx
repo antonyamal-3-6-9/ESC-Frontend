@@ -2,7 +2,6 @@ import { createSlice } from "@reduxjs/toolkit";
 
 interface UserState {
   username: string | null;
-  email: string | null;
   role: string | null;
   active: boolean;
 }
@@ -11,7 +10,6 @@ interface UserState {
 // Initial state for the user
 const initialState: UserState = {
   username: null,
-  email: null,
   role: null,
   active: false,
 };
@@ -23,15 +21,14 @@ const userSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       state.username = `${action.payload.first_name} ${action.payload.last_name}`;
-      state.email = action.payload.email;
       state.role = action.payload.role;
+      localStorage.setItem('role', action.payload.role)
     },
     activateUser: (state, action) => {
       state.active = action.payload;
     },
     clearUser: (state) => {
       state.username = null;
-      state.email = null;
       state.role = null;
     },
   },

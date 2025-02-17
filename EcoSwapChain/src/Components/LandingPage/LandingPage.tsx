@@ -1,132 +1,175 @@
-import Navbar from "../NavBar/Navbar";
-import { Button, Typography, Box } from "@mui/material";
-import Grid from "@mui/material/Grid2";
-import Image from "./bg3.jpg";
-import { Link } from "react-router";
-
+import { Box, Button, Typography, useTheme, Slide } from '@mui/material'
+import Navbar from '../NavBar/Navbar'
+import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import SecurityIcon from '@mui/icons-material/Security'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
+import Grid from '@mui/material/Grid2'
+import { Hero } from './Hero'
+import { Stats } from './Stats'
 
 const LandingPage = () => {
+  
+  const theme = useTheme()
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    setChecked(true)
+  }, [])
+
   return (
-    <>
+    <Box sx={{ backgroundColor: 'background.default' }}>
       <Navbar />
-      <div style={{ margin: "0", padding: "0", paddingTop: "72px" }}>
-        <Box>
-          <Box
-            sx={{
-              height: "80vh",
-              backgroundImage: `url("${Image}")`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
-              padding: "0 20px",
-              position: "relative",
-              boxShadow: "10",
-            }}
-          />
-          <Box
-            sx={{
-              textAlign: "center",
-              position: "absolute",
-              top: "100px",
-              left: "20px",
-              width: "40%"
-            }}
-          >
-          <Typography
-              variant="h5"
-              sx={{ marginBottom: 0, fontWeight: "", color: "#F6F4F0" }}
-            >
-              Welcome to
-            </Typography>
-            <Typography
-              variant="h3"
-              sx={{ marginBottom: 2, fontWeight: "bold", color: "#F6F4F0" }}
-            >
-              Swapchain
-            </Typography>
-            <Typography variant="h5" sx={{ marginBottom: 3, color: "#FFFFFF" }}>
-              A blockchain-powered platform where sustainability meets the
-              future of commerce
-            </Typography>
-           <Link to="trader/register">
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              sx = {{
-                backgroundColor: "#2E5077"
-              }}
-            >
-              Register Now
-            </Button>
-            </Link> 
-          </Box>
-        </Box>
 
-        <Box
-          id="features"
+      {/* Hero Section */}
+      <Hero />
+
+      {/* Stats Section */}
+      <Stats checked={checked} setChecked={setChecked} />
+
+      {/* Features Section */}
+      <Box id='features' sx={{ py: 10, px: 4 }}>
+        <Typography
+          variant='h2'
           sx={{
-            padding: "60px 0",
+            textAlign: 'center',
+            mb: 6,
+            color: 'text.primary'
           }}
         >
-          <Grid container spacing={4}>
-            <Grid size={4}>
-              <Box sx={{ padding: 4, height: "60%" }}>
-                <Typography variant="h5" sx={{ marginBottom: 2 }}>
-                  NFT Backed Authentication
-                </Typography>
-                <Typography variant="body1">
-                  Each Products are backed up using NFT. Ownerships can be traced and transferred using blockchain
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid size={4}>
-              <Box sx={{ padding: 4, height: "60%" }}>
-                <Typography variant="h5" sx={{ marginBottom: 2 }}>
-                  Blockchain-Powered Security
-                </Typography>
-                <Typography variant="body1">
-                  Your transactions are secured and tracked on the blockchain,
-                  ensuring trust and transparency.
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid size={4}>
-              <Box sx={{ padding: 4, height: "60%" }}>
-                <Typography variant="h5" sx={{ marginBottom: 2 }}>
-                  Seamless Trading
-                </Typography>
-                <Typography variant="body1">
-                  A simple and user-friendly interface to trade goods, services,
-                  and crypto with ease.
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </Box>
+          Why Choose SwapChain?
+        </Typography>
 
-        <Box
+        <Grid container spacing={6}>
+          {[
+            {
+              icon: <SecurityIcon fontSize='large' />,
+              title: 'Military-Grade Security',
+              content:
+                'Blockchain-powered encryption ensures your assets and data remain protected'
+            },
+            {
+              icon: <AccountBalanceWalletIcon fontSize='large' />,
+              title: 'NFT Integration',
+              content:
+                'Unique NFT-backed authentication for digital asset ownership'
+            },
+            {
+              icon: <SwapHorizIcon fontSize='large' />,
+              title: 'Instant Trading',
+              content:
+                'Real-time trading engine with near-zero latency transactions'
+            }
+          ].map((feature, index) => (
+            <Grid size={4} key={index}>
+              <Slide direction='up' in={checked} timeout={800 + index * 200}>
+                <Box
+                  sx={{
+                    p: 4,
+                    height: '100%',
+                    borderRadius: 4,
+                    backgroundColor: 'background.paper',
+                    transition: 'all 0.3s',
+                    '&:hover': {
+                      transform: 'translateY(-10px)',
+                      boxShadow: 6
+                    }
+                  }}
+                >
+                  <Box
+                    sx={{
+                      color: 'accent.main',
+                      mb: 3,
+                      fontSize: '3rem'
+                    }}
+                  >
+                    {feature.icon}
+                  </Box>
+                  <Typography
+                    variant='h5'
+                    sx={{
+                      mb: 2,
+                      color: 'text.primary'
+                    }}
+                  >
+                    {feature.title}
+                  </Typography>
+                  <Typography variant='body1' sx={{ color: 'text.secondary' }}>
+                    {feature.content}
+                  </Typography>
+                </Box>
+              </Slide>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* CTA Section */}
+      <Box
+        sx={{
+          py: 10,
+          backgroundColor: 'secondary.main',
+          color: 'primary.contrastText',
+          textAlign: 'center'
+        }}
+      >
+        <Typography variant='h3' sx={{ mb: 4, color: 'primary.contrastText' }}>
+          Ready to Join the Future of Trading?
+        </Typography>
+        <Button
+          component={Link}
+          to='/trader/register'
+          variant='contained'
+          size='large'
           sx={{
-            backgroundColor: "#282c34",
-            color: "#fff",
-            padding: "40px 0",
-            textAlign: "center",
+            px: 6,
+            py: 2,
+            fontSize: '1.2rem',
+            backgroundColor: 'accent.main',
+            color: 'secondary.main',
+            '&:hover': {
+              backgroundColor: 'accent.dark'
+            }
           }}
         >
-          <Typography variant="body1" sx={{ marginBottom: 2 }}>
-            © 2025 EcoSwapChain. All rights reserved.
-          </Typography>
-          <Button variant="text" sx={{ color: "#fff" }} href="#contact">
-            Contact Us
-          </Button>
-        </Box>
-      </div>
-    </>
-  );
-};
+          Start Trading Now
+        </Button>
+      </Box>
 
-export default LandingPage;
+      {/* Footer */}
+      <Box
+        sx={{
+          py: 4,
+          backgroundColor: 'background.paper',
+          textAlign: 'center'
+        }}
+      >
+        <Typography
+          variant='body1'
+          sx={{
+            color: 'text.secondary',
+            mb: 2
+          }}
+        >
+          © {new Date().getFullYear()} SwapChain. All rights reserved.
+        </Typography>
+        <Button
+          component={Link}
+          to='/contact'
+          variant='text'
+          sx={{
+            color: 'text.primary',
+            '&:hover': {
+              color: 'accent.main'
+            }
+          }}
+        >
+          Contact Us
+        </Button>
+      </Box>
+    </Box>
+  )
+}
+
+export default LandingPage

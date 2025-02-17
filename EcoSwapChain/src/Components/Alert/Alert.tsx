@@ -1,4 +1,4 @@
-import { Alert, Snackbar, IconButton, Fade } from "@mui/material";
+import { Alert, Snackbar, IconButton, Slide, Grow, useTheme } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ErrorIcon from "@mui/icons-material/Error";
 import WarningIcon from "@mui/icons-material/Warning";
@@ -7,78 +7,95 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
 import { setAlertOn } from "../../Redux/alertBackdropSlice";
+import { styled } from "@mui/material/styles";
 
-
-const CollapsibleAlert = ({}) => {
-  // Customize colors based on severity
-  const getColor = (severity: string): string => {
-    switch (severity) {
-      case "error":
-        return "#d32f2f"; // Red
-      case "warning":
-        return "#ed6c02"; // Orange
-      case "info":
-        return "#0288d1"; // Blue
-      case "success":
-        return "#2e7d32"; // Green
-      default:
-        return "#0288d1"; // Default to blue
-    }
-  };
-
-  // Get the appropriate icon based on severity
-  const getIcon = (severity: string): JSX.Element => {
-    switch (severity) {
-      case "error":
-        return <ErrorIcon />;
-      case "warning":
-        return <WarningIcon />;
-      case "info":
-        return <InfoIcon />;
-      case "success":
-        return <CheckCircleIcon />;
-      default:
-        return <InfoIcon />;
-    }
-  };
-
-  const alertData = useSelector(
-    (state: RootState) => state.alertBackdrop.alert
-  ); // Get the alert state from the store
+const CollapsibleAlert = () => {
+  const theme = useTheme();
   const dispatch = useDispatch();
+  const alertData = useSelector((state: RootState) => state.alertBackdrop.alert);
 
-  const handleClose = () => {
-    dispatch(setAlertOn(false)); // Close the alert
+  const severityColorMap = {
+    error: theme.palette.secondary.main,
+    warning: theme.palette.primary.main,
+    info: theme.palette.accent.main,
+    success: theme.palette.accent.light,
   };
+
+  const AlertIcon = styled('div')({
+    display: 'flex',
+    paddingRight: '8px',
+    '& svg': {
+      fontSize: '1.5rem',
+      color: theme.palette.background.default,
+    }
+  });
+
+  const StyledAlert = styled(Alert)(({ severity }) => ({
+    borderRadius: '12px',
+    boxShadow: '0 8px 32px rgba(46, 80, 119, 0.15)',
+    transition: 'transform 0.3s, opacity 0.3s',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+    },
+    backgroundColor: severityColorMap[severity as keyof typeof severityColorMap] || theme.palette.accent.main,
+    color: theme.palette.background.default,
+    fontWeight: 500,
+    padding: theme.spacing(1.5),
+    alignItems: 'center',
+  }));
+
+  const getIcon = (severity: string): JSX.Element => {
+    const iconStyle = { color: theme.palette.background.default };
+    switch (severity) {
+      case "error": return <ErrorIcon sx={iconStyle} />;
+      case "warning": return <WarningIcon sx={iconStyle} />;
+      case "info": return <InfoIcon sx={iconStyle} />;
+      case "success": return <CheckCircleIcon sx={iconStyle} />;
+      default: return <InfoIcon sx={iconStyle} />;
+    }
+  };
+
+  const handleClose = () => dispatch(setAlertOn(false));
 
   return (
     <Snackbar
-      TransitionComponent={Fade}
-      anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       open={alertData.alertOn}
       autoHideDuration={3000}
       onClose={handleClose}
+      TransitionComponent={(props) => (
+        <Slide {...props} direction="down" timeout={200} />
+      )}
+      TransitionProps={{ timeout: 200 }}
     >
-      <Alert
+      <StyledAlert
         elevation={6}
-        variant="filled"
         onClose={handleClose}
         severity={alertData.alertSeverity}
-        sx={{ backgroundColor: getColor(alertData.alertSeverity) }}
+        icon={
+          <AlertIcon>
+            {getIcon(alertData.alertSeverity)}
+          </AlertIcon>
+        }
         action={
           <IconButton
-            aria-label="close"
-            color="inherit"
             size="small"
             onClick={handleClose}
+            sx={{
+              color: theme.palette.background.default,
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.15)'
+              }
+            }}
           >
             <CloseIcon fontSize="inherit" />
           </IconButton>
         }
-        icon={getIcon(alertData.alertSeverity)}
       >
-        {alertData.alertMessage}
-      </Alert>
+        <Grow in={alertData.alertOn} timeout={500}>
+          <span>{alertData.alertMessage}</span>
+        </Grow>
+      </StyledAlert>
     </Snackbar>
   );
 };

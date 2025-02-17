@@ -1,16 +1,18 @@
-import { TextField, Button, Typography, Box } from "@mui/material";
+import { TextField, Button, Typography, Box, CircularProgress } from "@mui/material";
 import Grid2 from "@mui/material/Grid2"; // Import Grid2
 import Container from "@mui/material/Container"; // Ensure correct import of Container
 import { Google } from "@mui/icons-material";
 import LImg from "./LImg.jpg"; // Replace with your image path
 import Navbar from "../NavBar/Navbar"; // Navbar component
-import axios from "axios";
 import { useState } from "react";
 import { activateUser, setUser } from "../../Redux/userSlice";
 import { setLoading } from "../../Redux/alertBackdropSlice";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 import { PublicAPI } from "../API/api";
+import CollapsibleAlert from "../Alert/Alert";
+import BackDrop from "../Backdrop/Backdrop";
+
 
 const Login = () => {
 
@@ -52,6 +54,10 @@ const Login = () => {
   return (
     <>
       <Navbar />
+      <BackDrop>
+        <CircularProgress color="inherit" />
+      </BackDrop>
+      <CollapsibleAlert/>
       <Container
         maxWidth={"md"}
         disableGutters

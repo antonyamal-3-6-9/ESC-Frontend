@@ -1,6 +1,5 @@
 import React from 'react';
 import { Modal, Box, TextField, Button, Typography } from '@mui/material';
-import BackDrop from '../Backdrop/Backdrop';
 
 interface OTPModalProps {
     open: boolean;

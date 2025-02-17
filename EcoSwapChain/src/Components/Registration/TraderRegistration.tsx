@@ -16,16 +16,18 @@ import {
   setAlertMessage,
 } from "../../Redux/alertBackdropSlice";
 import { setLoading } from "../../Redux/alertBackdropSlice";
-import { setUser, activateUser } from "../../Redux/userSlice";
-import { useNavigate } from "react-router";
+import { setUser, activateUser } from "../../Redux/userSlice";;
+import KeyModal from "./KeyModal";
 
 const Register = () => {
 
   const dispatch = useDispatch();
-  const navigate = useNavigate()
 
   const [open, setOpen] = useState(false);
   const [otp, setOtp] = useState("");
+
+  const [passkey, setKey] = useState("");
+  const [keyModalOpen, setKeyModalOpen] = useState(false);
 
   const [registerData, setRegisterData] = useState({
     firstName: "",
@@ -58,9 +60,11 @@ const Register = () => {
       })
       localStorage.setItem("token", registerResponse.data.token);
       dispatch(setUser(registerResponse.data.user));
+      setKey(registerResponse.data.key);
       dispatch(activateUser(true));
       dispatch(setLoading(false));
-      navigate("/")
+      setOpen(false)
+      setKeyModalOpen(true);
     } catch (error) {
       console.log(error);
       dispatch(setLoading(false));
@@ -118,11 +122,16 @@ const Register = () => {
       <OTPModal
         open={open}
         handleClose={() => {
-          setOpen(false), setOtp("");
+          setOpen(false); setOtp("")
         }}
         handleSubmit={handleOtpSubmit}
         otp={otp}
         setOtp={setOtp}
+      />
+      <KeyModal
+        open={keyModalOpen}
+        setOpen={setKeyModalOpen}
+        passKey={passkey}
       />
       <Container
         maxWidth={"md"}

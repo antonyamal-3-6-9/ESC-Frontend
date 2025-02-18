@@ -4,13 +4,17 @@ import { Action } from "redux";
 import apiEndpointsReducer from "./Redux/apiEndPoint";
 import userReducer from "./Redux/userSlice";
 import alertBackdropReducer from "./Redux/alertBackdropSlice";
+import walletReducer from "./Redux/walletSlice"
+
 import { thunk } from "redux-thunk";
+
 
 const store = configureStore({
   reducer: {
     apiEndpoints: apiEndpointsReducer,
     user: userReducer,
     alertBackdrop: alertBackdropReducer,
+    wallet: walletReducer
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(thunk),
 });

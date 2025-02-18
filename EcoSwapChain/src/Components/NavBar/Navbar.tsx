@@ -2,9 +2,16 @@ import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material'
 import Logo from '../logos/svg/logo-color.svg'
 import { Link } from 'react-router'
 import { useAppSelector } from '../../store'
+import { useDispatch } from 'react-redux'
+import { triggerWallet } from '../../Redux/walletSlice'
 
 const Navbar = () => {
   const user = useAppSelector(state => state.user)
+  const dispatch = useDispatch()
+
+  const handleWallet = () => {
+    dispatch(triggerWallet())
+  }
 
   return (
     <AppBar
@@ -74,18 +81,21 @@ const Navbar = () => {
             </Button>
           </Link>
 
-          <Button
-            color='inherit'
-            sx={{
-              color: 'primary.contrastText',
-              '&:hover': {
-                backgroundColor: 'accent.main',
-                color: 'accent.contrastText'
-              }
-            }}
-          >
-            Features
-          </Button>
+          {user.active ? (
+            <Button
+              color='inherit'
+              sx={{
+                color: 'primary.contrastText',
+                '&:hover': {
+                  backgroundColor: 'accent.main',
+                  color: 'accent.contrastText'
+                }
+              }}
+              onClick={handleWallet}
+            >
+              Wallet
+            </Button>
+          ) : null}
 
           <Button
             color='inherit'

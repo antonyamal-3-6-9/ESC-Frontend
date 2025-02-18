@@ -39,7 +39,7 @@ const Login = () => {
       dispatch(setLoading(false));
       navigate("/");
     } catch (error) {
-      console.error("Login failed.");
+      console.error("Login failed.", error);
       dispatch(setLoading(false));
     }
   };

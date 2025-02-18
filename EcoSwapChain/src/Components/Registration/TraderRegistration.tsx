@@ -1,4 +1,4 @@
-import { TextField, Button, Box, CircularProgress } from "@mui/material";
+import { TextField, Button, Box } from "@mui/material";
 import Grid2 from "@mui/material/Grid2"; // Import Grid2
 import Container from "@mui/material/Container"; // Ensure correct import of Container
 import { useState } from "react";
@@ -116,7 +116,6 @@ const Register = () => {
     <>
       <Navbar />
       <BackDrop>
-        <CircularProgress color="inherit" />
       </BackDrop>
       <CollapsibleAlert />
       <OTPModal

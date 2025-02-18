@@ -93,10 +93,11 @@ API.interceptors.response.use(
           'auth/token/update/',
           {},
           { withCredentials: true }
-        )
+        ) 
 
         // Store new token
-        localStorage.setItem('accessToken', refreshResponse.data.access_token)
+        localStorage.setItem('token', refreshResponse.data.access_token)
+        console.log("New token stored")
         API.defaults.headers.common[
           'Authorization'
         ] = `Bearer ${refreshResponse.data.access_token}`
@@ -107,7 +108,7 @@ API.interceptors.response.use(
         handleErrorResponse(error)
         console.error('Session expired. Redirecting to login...')
         dispatchAlert('Session expired. Please log in again.', 'error')
-        window.location.href = '/trader/login/' // Redirect user
+        // window.location.href = '/trader/login/' // Redirect user
       }
     }
     return handleErrorResponse(error)

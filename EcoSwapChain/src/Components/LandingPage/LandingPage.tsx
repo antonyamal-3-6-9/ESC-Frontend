@@ -1,4 +1,4 @@
-import { Box, Button, Typography, useTheme, Slide } from '@mui/material'
+import { Box, Button, Typography, Slide } from '@mui/material'
 import Navbar from '../NavBar/Navbar'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
@@ -11,7 +11,6 @@ import { Stats } from './Stats'
 
 const LandingPage = () => {
   
-  const theme = useTheme()
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {

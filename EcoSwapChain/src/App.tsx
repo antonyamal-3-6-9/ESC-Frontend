@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import './App.css'
 import './index.css'
 import { Routes, Route } from 'react-router-dom'
@@ -7,7 +8,11 @@ import LandingPage from './Components/LandingPage/LandingPage'
 import { useDispatch } from 'react-redux'
 import { checkAuth } from './Redux/userActions'
 import { useEffect } from 'react'
-import Wallet from './Components/Wallet/Wallet'
+import WalletModal from './Components/Wallet/WalletModal'
+import BackDrop from './Components/Backdrop/Backdrop'
+import ProductGrid from './Components/NFT/listNFT'
+import ProductDetailPage from './Components/NFT/NFTDetails'
+import NFTCreationForm from './Components/NFT/Create/NFTCreationForm'
 
 function App () {
   const dispatch = useDispatch()
@@ -23,18 +28,15 @@ function App () {
           path='/'
           element={
             <>
-              <LandingPage />
+              <NFTCreationForm />
             </>
           }
         />
         <Route path='/trader/register/' element={<Register />} />
         <Route path='/trader/login/' element={<Login />} />
       </Routes>
-      {/* <Wallet
-        publicKey='HN5sE2LfZAX1gECW6GkHqJ4ScyYbQXdL5T3DKLKXqY5G'
-        swapcoinBalance={150.5}
-        onWithdraw={() => console.log('Withdraw to Solana')}
-      /> */}
+      <WalletModal />
+      <BackDrop/>
     </div>
   )
 }

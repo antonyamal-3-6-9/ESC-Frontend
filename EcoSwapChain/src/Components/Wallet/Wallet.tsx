@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Button,
@@ -15,6 +15,8 @@ import {
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
 import { Theme } from '@mui/material/styles'
+import { API } from '../API/api'
+import Logo from "../logos/svg/logo-color.svg"
 
 declare module '@mui/material/styles' {
   interface Palette {
@@ -25,10 +27,19 @@ declare module '@mui/material/styles' {
   }
 }
 
-interface WalletProps {
-  publicKey: string
-  swapcoinBalance: number
-  onWithdraw: () => void
+interface Transaction {
+  transaction_hash: string
+  amount: number
+  transfered_to: string
+  transfered_from: string
+  status: string
+}
+
+interface WalletData {
+  public_key: string
+  balance: number
+  sent_transaction: Transaction[]
+  recieved_transaction: Transaction[]
 }
 
 // Custom theme with provided colors
@@ -77,33 +88,52 @@ const AnimatedCard = styled(Box)(({ theme }: { theme: Theme }) => ({
   }
 }))
 
-const Wallet: React.FC<WalletProps> = ({
-  publicKey,
-  swapcoinBalance,
-  onWithdraw
-}) => {
+const Wallet: React.FC = () => {
+  const [walletData, setWalletData] = useState<WalletData>({
+    public_key: '',
+    balance: 0,
+    sent_transaction: [],
+    recieved_transaction: []
+  })
+
+  async function getWalletData () {
+    try {
+      const response = await API.get('/wallet/retrieve/')
+      console.log(response.data.wallet)
+      setWalletData(response.data.wallet)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    getWalletData()
+  }, [])
+
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false)
   const [clicked, setClicked] = useState<boolean>(false)
 
   const convertToRs = (swapcoins: number): string =>
     (swapcoins * 0.1).toFixed(2)
-  const truncatedKey = `${publicKey.slice(0, 6)}...${publicKey.slice(-4)}`
+  const truncatedKey = `${walletData.public_key.slice(
+    0,
+    6
+  )}...${walletData.public_key.slice(-4)}`
 
   const handleCopy = (): void => {
-    navigator.clipboard.writeText(publicKey)
+    navigator.clipboard.writeText(walletData.public_key)
     setOpenSnackbar(true)
   }
 
   const handleWithdrawClick = (): void => {
     setClicked(true)
     setTimeout(() => setClicked(false), 200)
-    onWithdraw()
   }
 
   return (
     <ThemeProvider theme={theme}>
       <Slide in direction='up' timeout={500}>
-        <AnimatedCard sx={{ maxWidth: 450, m: 2 }}>
+        <AnimatedCard sx={{ maxWidth: 450, m: 1 }}>
           <Typography
             variant='h5'
             gutterBottom
@@ -112,13 +142,15 @@ const Wallet: React.FC<WalletProps> = ({
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 3,
+              justifyContent: 'center',
+              mb: 2
             }}
           >
             <img
-              src='solana-logo.svg'
-              alt='Solana'
-              style={{ height: '1.2em' }}
+              src={Logo}
+              alt='SwapChain'
+              style={{ height: '1.2em', color: 'primary.main' }}
             />
             Wallet
           </Typography>
@@ -127,13 +159,18 @@ const Wallet: React.FC<WalletProps> = ({
             label='Public Key'
             value={truncatedKey}
             fullWidth
-            InputProps={{
-              readOnly: true,
-              endAdornment: (
-                <IconButton onClick={handleCopy} sx={{ color: 'primary.main' }}>
-                  <ContentCopyIcon fontSize='small' />
-                </IconButton>
-              )
+            slotProps={{
+              input: {
+                readOnly: true,
+                endAdornment: (
+                  <IconButton
+                    onClick={handleCopy}
+                    sx={{ color: 'primary.main' }}
+                  >
+                    <ContentCopyIcon fontSize='small' />
+                  </IconButton>
+                )
+              }
             }}
             sx={{ my: 2 }}
           />
@@ -143,7 +180,7 @@ const Wallet: React.FC<WalletProps> = ({
               variant='h3'
               sx={{ color: 'primary.main', fontWeight: 800 }}
             >
-              {swapcoinBalance.toFixed(2)}
+              {walletData.balance}
               <Typography component='span' sx={{ color: 'accent.main', ml: 1 }}>
                 SWAP
               </Typography>
@@ -152,7 +189,7 @@ const Wallet: React.FC<WalletProps> = ({
               variant='subtitle1'
               sx={{ color: 'secondary.main', mt: 1 }}
             >
-              ≈ ₹{convertToRs(swapcoinBalance)}
+              ≈ ₹{convertToRs(walletData.balance)}
             </Typography>
           </Box>
 

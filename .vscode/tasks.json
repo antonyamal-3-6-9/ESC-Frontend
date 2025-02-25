@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build",
+			"path": "EcoSwapChain",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build - EcoSwapChain",
+			"detail": "tsc -b && vite build"
+		}
+	]
+}

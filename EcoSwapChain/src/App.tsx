@@ -13,13 +13,18 @@ import BackDrop from './Components/Backdrop/Backdrop'
 import ProductGrid from './Components/NFT/listNFT'
 import ProductDetailPage from './Components/NFT/NFTDetails'
 import NFTCreationForm from './Components/NFT/Create/NFTCreationForm'
+import NFTCollection from './Components/NFT/Collection/CollectionListing'
+import OrderDetails from './Components/Orders/OrderDetails'
+import { useAppSelector } from './store'
+import NFTOrderListing from './Components/Orders/OrderList'
 
 function App () {
+  const { isOpen } = useAppSelector(state => state.wallet)
   const dispatch = useDispatch()
 
   useEffect(() => {
     dispatch(checkAuth() as never)
-  })
+  }, [dispatch])
 
   return (
     <div>
@@ -28,14 +33,17 @@ function App () {
           path='/'
           element={
             <>
-              <NFTCreationForm />
+              <OrderDetails />
             </>
           }
         />
         <Route path='/trader/register/' element={<Register />} />
         <Route path='/trader/login/' element={<Login />} />
       </Routes>
-      <WalletModal />
+      {
+        isOpen && <WalletModal />
+      }
+      <WalletModal/>
       <BackDrop/>
     </div>
   )

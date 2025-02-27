@@ -57,6 +57,7 @@ interface NFTFormData {
   product: ProductData
 }
 
+
 interface AddNew {
   addRoot: boolean;
   addMain: boolean
@@ -71,6 +72,9 @@ interface Categories {
   root: CategoryData[],
   main: CategoryData[]
 }
+
+
+
 
 
 // Styled Components

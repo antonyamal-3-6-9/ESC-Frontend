@@ -46,7 +46,7 @@ window.Buffer = buffer.Buffer;
           path='/'
           element={
             <>
-              <NFTCreationForm />
+              <OrderDetails />
             </>
           }
         />
@@ -54,7 +54,10 @@ window.Buffer = buffer.Buffer;
         <Route path='/trader/login' element={<Login />} />
         <Route path='/nft/create' element={<CreateNFT />} />
       </Routes>
-      <WalletModal />
+      {
+        isOpen && <WalletModal />
+      }
+      <WalletModal/>
       <BackDrop/>
     </div>
   )

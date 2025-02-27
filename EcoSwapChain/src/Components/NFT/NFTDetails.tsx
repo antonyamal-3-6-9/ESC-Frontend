@@ -14,7 +14,6 @@ import {
   Paper,
   Fade,
   Zoom,
-  Collapse,
 } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import {
@@ -35,11 +34,11 @@ interface ProductImage {
   alt: string;
 }
 
-interface ProductFeature {
-  icon: string;
-  title: string;
-  description: string;
-}
+// interface ProductFeature {
+//   icon: string;
+//   title: string;
+//   description: string;
+// }
 
 interface ProductDetails {
   id: string;

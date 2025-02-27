@@ -22,19 +22,16 @@ const WalletModal = () => {
             left: '80%',
             transform: 'translate(-50%, -50%)',
             width: 500,
+            height: 700,
             bgcolor: 'background.paper',
             border: '2px solid #000',
             boxShadow: 24,
-            p: 3,
+            p: 1,
             display: 'flex',
             flexDirection: 'column'
           }}
         >
-          <Wallet
-            publicKey='HN5sE2LfZAX1gECW6GkHqJ4ScyYbQXdL5T3DKLKXqY5G'
-            swapcoinBalance={150.5}
-            onWithdraw={() => console.log('Withdraw to Solana')}
-          />
+          <Wallet/>
         </Box>
       </Modal>
     </>

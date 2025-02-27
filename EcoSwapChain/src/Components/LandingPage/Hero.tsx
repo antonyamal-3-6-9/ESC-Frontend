@@ -25,7 +25,6 @@ export const Hero = () => {
       <Box
         sx={{
           position: 'relative',
-          pt: { xs: 8, md: 10 },
           minHeight: '100vh',
           overflow: 'hidden'
         }}
@@ -93,7 +92,7 @@ export const Hero = () => {
           <Slide direction='up' in={checked} timeout={800}>
             <Button
               component={Link}
-              to='/trader/register'
+              to='trader/register'
               variant='gradient'
               size='large'
               sx={{

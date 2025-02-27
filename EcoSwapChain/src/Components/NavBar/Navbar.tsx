@@ -96,7 +96,7 @@ const Navbar = () => {
               Wallet
             </Button>
           ) : null}
-
+        <Link to={"/nft/create"}>
           <Button
             color='inherit'
             sx={{
@@ -107,8 +107,9 @@ const Navbar = () => {
               }
             }}
           >
-            Contact
-          </Button>
+            Create NFT
+            </Button>
+          </Link>
         </Box>
       </Toolbar>
     </AppBar>

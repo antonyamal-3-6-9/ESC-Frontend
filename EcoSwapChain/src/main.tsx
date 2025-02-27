@@ -8,6 +8,9 @@ import App from "./App";
 import store from "./store";
 import { SwapTheme } from "./theme";
 
+
+
+
 // Create root element once
 const container = document.getElementById("root")!;
 const root = createRoot(container);

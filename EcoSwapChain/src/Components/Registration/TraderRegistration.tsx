@@ -8,8 +8,6 @@ import Navbar from "../NavBar/Navbar";
 import { PublicAPI } from "../API/api"
 import { useDispatch } from "react-redux";
 import OTPModal from "./OTPModal";
-import BackDrop from "../Backdrop/Backdrop";
-import CollapsibleAlert from "../Alert/Alert";
 import {
   setAlertOn,
   setAlertSeverity,
@@ -18,6 +16,13 @@ import {
 import { setLoading } from "../../Redux/alertBackdropSlice";
 import { setUser, activateUser } from "../../Redux/userSlice";;
 import KeyModal from "./KeyModal";
+import { create } from "./walletInitialization";
+
+interface Wallet {
+  pubKey: string;
+  passKey: string;
+  status: boolean;
+}
 
 const Register = () => {
 
@@ -26,7 +31,6 @@ const Register = () => {
   const [open, setOpen] = useState(false);
   const [otp, setOtp] = useState("");
 
-  const [passkey, setKey] = useState("");
   const [keyModalOpen, setKeyModalOpen] = useState(false);
 
   const [registerData, setRegisterData] = useState({
@@ -36,10 +40,31 @@ const Register = () => {
     password: "",
   });
 
+  const [walletData, setWalletData] = useState<Wallet>({
+    pubKey: "",
+    passKey: "",
+    status: false
+  })
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRegisterData({ ...registerData, [e.target.name]: e.target.value });
   };
-  
+
+  const activateWallet = async () => {
+    const wallet = await create();
+    if (!wallet.status) {
+      return false
+    } else {
+      setWalletData((prev) => ({
+        ...prev,
+        pubKey: wallet.pubKey,
+        passKey: wallet.passKey,
+        status: wallet.status
+      }))
+      return true
+    }
+  }
+
   const handleSubmit = async () => {
     try {
       dispatch(setLoading(true));
@@ -58,13 +83,19 @@ const Register = () => {
         email: "",
         password: "",
       })
+      setOpen(false)
       localStorage.setItem("token", registerResponse.data.token);
       dispatch(setUser(registerResponse.data.user));
-      setKey(registerResponse.data.key);
       dispatch(activateUser(true));
-      dispatch(setLoading(false));
-      setOpen(false)
-      setKeyModalOpen(true);
+      if (await activateWallet()) {
+        dispatch(setLoading(false))
+        setKeyModalOpen(true)
+      } else {
+        dispatch(setLoading(false))
+        dispatch(setAlertOn(true))
+        dispatch(setAlertMessage("Error Creating Wallet, try again later"))
+        dispatch(setAlertSeverity("error"))
+      }
     } catch (error) {
       console.log(error);
       dispatch(setLoading(false));
@@ -105,7 +136,7 @@ const Register = () => {
       handleSubmit();
     } catch (error) {
       console.log(error);
-       dispatch(setLoading(false));
+      dispatch(setLoading(false));
       dispatch(setAlertOn(true));
       dispatch(setAlertSeverity("error"));
       dispatch(setAlertMessage("Error verifying OTP"));
@@ -115,9 +146,6 @@ const Register = () => {
   return (
     <>
       <Navbar />
-      <BackDrop>
-      </BackDrop>
-      <CollapsibleAlert />
       <OTPModal
         open={open}
         handleClose={() => {
@@ -130,7 +158,7 @@ const Register = () => {
       <KeyModal
         open={keyModalOpen}
         setOpen={setKeyModalOpen}
-        passKey={passkey}
+        passKey={walletData.passKey}
       />
       <Container
         maxWidth={"md"}

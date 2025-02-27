@@ -1,5 +1,4 @@
 import { Box, Button, Typography, Slide } from '@mui/material'
-import Navbar from '../NavBar/Navbar'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import SecurityIcon from '@mui/icons-material/Security'
@@ -18,8 +17,7 @@ const LandingPage = () => {
   }, [])
 
   return (
-    <Box sx={{ backgroundColor: 'background.default' }}>
-      <Navbar />
+    <Box sx={{ backgroundColor: 'background.default', pt: 10 }}>
 
       {/* Hero Section */}
       <Hero />

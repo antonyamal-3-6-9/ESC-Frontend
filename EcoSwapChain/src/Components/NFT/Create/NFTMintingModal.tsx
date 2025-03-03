@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Modal,
     Box,
@@ -14,14 +14,18 @@ import {
     IconButton,
     Divider,
     CircularProgress,
-    Alert
+    Alert,
+    LinearProgress
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
 import TokenIcon from '@mui/icons-material/Token';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { motion } from 'framer-motion';
+import { API } from '../../API/api';
+import { decryptAndTransfer } from '../../../BlockChain/main';
 
 interface NFTMintingModalProps {
     open: boolean;
@@ -33,8 +37,13 @@ interface NFTMintingModalProps {
         createdAt: string;
         id: number;
     };
-    onConfirm: (password: string) => Promise<void>;
-    userSwapCoinBalance: number;
+    onConfirm: (password: string) => Promise<string>; // Modified to return transaction hash
+}
+
+
+interface NftBlkChainData {
+    txHash: string;
+    mintAddress: string;
 }
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -116,6 +125,14 @@ const SwapCoinButton = styled(Button)(({ theme }) => ({
     }
 }));
 
+const TransactionCard = styled(Box)(({ theme }) => ({
+    background: theme.palette.background.default,
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(2),
+    border: `1px solid ${theme.palette.divider}`,
+    marginBottom: theme.spacing(2)
+}));
+
 // Animation variants for framer-motion
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -140,59 +157,219 @@ const itemVariants = {
     }
 };
 
+const floatVariants = {
+    initial: { y: 0 },
+    animate: {
+        y: -10,
+        transition: {
+            duration: 1.5,
+            repeat: Infinity,
+            repeatType: "reverse" as const,
+            ease: "easeInOut"
+        }
+    }
+};
+
 // Main component
 export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
     open,
     onClose,
     nftData,
-    onConfirm,
-    userSwapCoinBalance
 }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [transactionProgress, setTransactionProgress] = useState(0);
+    const [transactionHash, setTransactionHash] = useState('');
+    const [mintingProgress, setMintingProgress] = useState(0);
+    const [treasuryPublicKey, setTreasuryPublicKey] = useState('');
 
-    const steps = ['Review NFT', 'Confirm Payment', 'Sign Transaction'];
-    const insufficientBalance = userSwapCoinBalance < nftData.swapCoinCost;
+    const [nftBlkChainData, setNftBlkChainData] = useState<NftBlkChainData>({
+        txHash: "",
+        mintAddress: ""
+    })
 
-    const handleNext = () => {
-        if (activeStep === 2) {
-            handleConfirm();
-        } else {
+
+    const steps = ['Review NFT', 'Confirm Payment', 'Sign Transaction', 'SwapCoin Transfer', 'Mint NFT'];
+
+    const [userSwapCoinBalance, setUserSwapCoinBalance] = useState<number>(0)
+    const [mintingFee, setMintingFee] = useState<number>(20)
+    const [insufficientBalance, setInsufficientBalance] = useState<boolean>(true)
+    
+    const fetchBalance = async () => {
+        try {
+            const balanceResponse = await API.get('wallet/balance');
+            const fetchedBalance = Number(balanceResponse.data.balance);
+
+            setUserSwapCoinBalance(fetchedBalance);
+
+            if (fetchedBalance < Number(mintingFee)) {
+                setInsufficientBalance(true); // Should be `true` when balance is low
+                alert("⚠️ Insufficient SwapCoin balance. Please top up before proceeding.");
+            } else {
+                setInsufficientBalance(false);
+            }
+        } catch (error) {
+            console.error("❌ Error fetching balance:", error);
+            alert("⚠️ Failed to fetch balance. Please try again.");
+        }
+    };
+
+    const handleNext = async () => {
+        if (activeStep === 0) {
+            await fetchBalance();  // Ensure balance is fetched before proceeding
+            if (!insufficientBalance) {
+                setActiveStep(1);
+            }
+        } else if (activeStep === 2) {
+            await handleConfirm(); // Ensure `handleConfirm()` runs asynchronously
+        } else if (activeStep < 4) {
             setActiveStep((prevStep) => prevStep + 1);
         }
     };
+
 
     const handleBack = () => {
         setActiveStep((prevStep) => prevStep - 1);
     };
 
+    const simulateTransactionProgress = () => {
+        // Simulate transaction progress
+        const interval = setInterval(() => {
+            setTransactionProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(interval);
+                    return 100;
+                }
+                return prev + 5;
+            });
+        }, 200);
+    };
+
+    const simulateMintingProgress = () => {
+        // Simulate minting progress
+        const interval = setInterval(() => {
+            setMintingProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(interval);
+                    return 100;
+                }
+                return prev + 2;
+            });
+        }, 200);
+    };
+
+    // Watch for transaction progress completion and automatically move to next step
+    useEffect(() => {
+        if (transactionProgress === 100 && activeStep === 3) {
+            setTimeout(() => setActiveStep(4), 1000);
+        }
+    }, [transactionProgress, activeStep]);
+
+    // Watch for minting progress completion and automatically move to success
+    useEffect(() => {
+        if (mintingProgress === 100 && activeStep === 4) {
+            setTimeout(() => setActiveStep(5), 1000);
+        }
+    }, [mintingProgress, activeStep]);
+
+    const initiateFeeTransfer = async () => {
+        try {
+            const initResponse = await API.post("wallet/mintFee/tx/init", {
+                password: password
+            });
+
+            console.log(initResponse);
+            return initResponse.data; // Return the full response data
+        } catch (error) {
+            console.error("❌ Fee transfer initiation failed:", error);
+            alert("Error: Failed to initiate fee transfer. Please try again.");
+            throw error; // Re-throw to handle in `handleConfirm`
+        }
+    };
+
+    const mintNFT = async (txHash: string) => {
+        console.log(nftData.id);
+        try {
+            const mintResponse = await API.post('nfts/mint/', {
+                txHash: txHash,
+                id: nftData.id
+            });
+
+            console.log(mintResponse);
+            setNftBlkChainData(mintResponse.data.tx)
+            alert("✅ NFT successfully minted!");
+        } catch (error) {
+            console.error("❌ NFT minting failed:", error);
+            alert("Error: Failed to mint NFT. Please try again.");
+            throw error;
+        }
+    };
+
     const handleConfirm = async () => {
         if (password.length < 6) {
             setError('Password must be at least 6 characters');
+            alert("⚠️ Password must be at least 6 characters long.");
             return;
         }
 
         try {
             setIsProcessing(true);
             setError(null);
-            await onConfirm(password);
-            setActiveStep(3); // Success state
+
+            // Step 1: Initiate Fee Transfer
+            const responseData = await initiateFeeTransfer();
+            setTreasuryPublicKey(responseData.treasuryKey || "unknown_key");
+
+            setActiveStep(3); // Move to transaction step
+            simulateTransactionProgress();
+
+            // Step 2: Transfer SwapCoin & Decrypt
+            const txHash = await decryptAndTransfer(
+                mintingFee,
+                responseData.treasuryKey,
+                responseData.rpcUrl,
+                responseData.mintAddress,
+                password,
+                responseData.encKey
+            );
+
+            if (!txHash) {
+                throw new Error("Transaction hash is missing. Transaction may have failed.");
+            }
+
+            setTransactionHash(txHash);
+            alert(`✅ Transaction Successful! Tx Hash: ${txHash}`);
+
+            simulateMintingProgress();
+
+            // Step 3: Mint NFT
+            await mintNFT(txHash);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Transaction failed');
-        } finally {
+            console.error("❌ Transaction error:", err);
+            alert(`Error: ${err instanceof Error ? err.message : "Transaction failed."}`);
+
+            setActiveStep(2); 
             setIsProcessing(false);
         }
     };
 
+
+
     const handleClose = () => {
-        // Reset state when modal closes
+
         setActiveStep(0);
         setPassword('');
         setError(null);
+        setTransactionProgress(0);
+        setMintingProgress(0);
+        setTransactionHash('');
+        setIsProcessing(false);
         onClose();
     };
+
+    // Generate a mock transaction hash for the success screen
 
     const renderStepContent = () => {
         switch (activeStep) {
@@ -205,7 +382,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                     >
                         <motion.div variants={itemVariants}>
                             <NFTImage>
-                                <img src={nftData.imageUrl} alt={nftData.name} />
+                                <img src={`http://localhost:8000/${nftData.imageUrl}`} alt={nftData.name} />
                                 <GlowBadge>
                                     <TokenIcon fontSize="small" />
                                     Pending
@@ -250,7 +427,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                             <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
                                 <Typography variant="body1">SwapCoin Cost:</Typography>
                                 <Typography variant="body1" fontWeight={600} color="primary.dark">
-                                    {nftData.swapCoinCost} SWC
+                                    {mintingFee} SWC
                                 </Typography>
                             </Stack>
                         </motion.div>
@@ -333,7 +510,198 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                     </motion.div>
                 );
 
-            case 3:
+            case 3: // New SwapCoin Transfer Step
+                return (
+                    <motion.div
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        <motion.div variants={itemVariants}>
+                            <Typography variant="h6" gutterBottom>
+                                SwapCoin Transfer
+                            </Typography>
+                        </motion.div>
+
+                        <motion.div
+                            variants={itemVariants}
+                            style={{ textAlign: 'center', marginBottom: '24px' }}
+                        >
+                            <motion.div
+                                variants={floatVariants}
+                                initial="initial"
+                                animate="animate"
+                            >
+                                <AccountBalanceWalletIcon
+                                    sx={{
+                                        fontSize: 60,
+                                        color: 'primary.main',
+                                        mb: 1
+                                    }}
+                                />
+                            </motion.div>
+
+                            <Typography variant="body2" sx={{ mb: 2 }}>
+                                Transferring {nftData.swapCoinCost} SwapCoin to Treasury
+                            </Typography>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <TransactionCard>
+                                <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
+                                    <Typography variant="body2" color="text.secondary">From:</Typography>
+                                    <Typography variant="body2" fontWeight={500} sx={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        Your Wallet
+                                    </Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
+                                    <Typography variant="body2" color="text.secondary">To:</Typography>
+                                    <Typography variant="body2" fontWeight={500} sx={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        Treasury ({treasuryPublicKey.substring(0, 6)}...{treasuryPublicKey.substring(treasuryPublicKey.length - 4)})
+                                    </Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between">
+                                    <Typography variant="body2" color="text.secondary">Amount:</Typography>
+                                    <Typography variant="body2" fontWeight={600} color="primary.dark">
+                                        {nftData.swapCoinCost} SWC
+                                    </Typography>
+                                </Stack>
+                            </TransactionCard>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                                Transaction Progress
+                            </Typography>
+                            <LinearProgress
+                                variant="determinate"
+                                value={transactionProgress}
+                                sx={{
+                                    height: 8,
+                                    borderRadius: 1,
+                                    mb: 2,
+                                    '& .MuiLinearProgress-bar': {
+                                        background: (theme) => theme.palette.gradient.secondary
+                                    }
+                                }}
+                            />
+                            <Typography variant="caption" color="text.secondary" align="right" display="block">
+                                {transactionProgress}% Complete
+                            </Typography>
+                        </motion.div>
+
+                        {transactionProgress === 100 && (
+                            <motion.div
+                                variants={itemVariants}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                            >
+                                <Alert severity="success" sx={{ mt: 2 }}>
+                                    `Transaction Successful! ${transactionHash} Proceeding to NFT minting...``
+                                </Alert>
+                            </motion.div>
+                        )}
+                    </motion.div>
+                );
+
+            case 4: // NFT Minting Step
+                return (
+                    <motion.div
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        <motion.div variants={itemVariants}>
+                            <Typography variant="h6" gutterBottom>
+                                Minting Your NFT
+                            </Typography>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <NFTImage>
+                                <motion.div
+                                    initial={{ filter: 'blur(10px) grayscale(100%)' }}
+                                    animate={{
+                                        filter: `blur(${10 - (mintingProgress / 10)}px) grayscale(${100 - mintingProgress}%)`
+                                    }}
+                                    transition={{ duration: 0.5 }}
+                                >
+                                    <img src={`http://localhost:8000/${nftData.imageUrl}`} alt={nftData.name} />
+                                </motion.div>
+                                <GlowBadge>
+                                    <TokenIcon fontSize="small" />
+                                    Minting...
+                                </GlowBadge>
+                            </NFTImage>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Typography variant="body2" sx={{ mb: 2 }}>
+                                Your transaction was successful! Now minting your NFT on the blockchain...
+                            </Typography>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                                Minting Progress
+                            </Typography>
+                            <LinearProgress
+                                variant="determinate"
+                                value={mintingProgress}
+                                sx={{
+                                    height: 8,
+                                    borderRadius: 1,
+                                    mb: 2,
+                                    '& .MuiLinearProgress-bar': {
+                                        background: (theme) => theme.palette.gradient.primary
+                                    }
+                                }}
+                            />
+                            <Typography variant="caption" color="text.secondary" align="right" display="block">
+                                {mintingProgress}% Complete
+                            </Typography>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <TransactionCard>
+                                <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
+                                    <Typography variant="body2" color="text.secondary">Transaction Hash:</Typography>
+                                </Stack>
+                                <Typography
+                                    variant="body2"
+                                    fontWeight={500}
+                                    sx={{
+                                        wordBreak: 'break-all',
+                                        fontFamily: 'monospace',
+                                        bgcolor: 'background.paper',
+                                        p: 1,
+                                        borderRadius: 1,
+                                        border: '1px solid',
+                                        borderColor: 'divider'
+                                    }}
+                                >
+                                    {nftBlkChainData.txHash}
+                                </Typography>
+                            </TransactionCard>
+                        </motion.div>
+
+                        {mintingProgress === 100 && (
+                            <motion.div
+                                variants={itemVariants}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                            >
+                                <Alert severity="success" sx={{ mt: 2 }}>
+                                    NFT successfully minted! Completing process...
+                                </Alert>
+                            </motion.div>
+                        )}
+                    </motion.div>
+                );
+
+            case 5: // Success Step (previously case 3)
                 return (
                     <motion.div
                         variants={containerVariants}
@@ -367,9 +735,15 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
 
                         <motion.div variants={itemVariants}>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                                Transaction hash: {generateMockTxHash()}
+                                Transaction hash: {nftBlkChainData.txHash}
                             </Typography>
                         </motion.div>
+                        <motion.div variants={itemVariants}>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                Mint Address: {nftBlkChainData.mintAddress}
+                            </Typography>
+                        </motion.div>
+
 
                         <motion.div variants={itemVariants}>
                             <Button
@@ -389,12 +763,6 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         }
     };
 
-    // Generate a mock transaction hash for the success screen
-    const generateMockTxHash = () => {
-        return `0x${Array.from({ length: 40 }, () =>
-            Math.floor(Math.random() * 16).toString(16)).join('')}`;
-    };
-
     return (
         <Modal
             open={open}
@@ -406,7 +774,8 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                p: 2
+                p: 2,
+                height: "80%"
             }}
         >
             <Fade in={open}>
@@ -425,11 +794,11 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                         <CloseIcon />
                     </IconButton>
 
-                    {activeStep < 3 && (
+                    {activeStep < 5 && (
                         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-                            {steps.map((label) => (
+                            {steps.map((label, index) => (
                                 <Step key={label}>
-                                    <StepLabel>{label}</StepLabel>
+                                    <StepLabel>{index < 3 ? label : ''}</StepLabel>
                                 </Step>
                             ))}
                         </Stepper>
@@ -457,7 +826,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                     disabled={password.length < 6 || isProcessing || insufficientBalance}
                                     startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : <TokenIcon />}
                                 >
-                                    {isProcessing ? 'Processing...' : `Pay ${nftData.swapCoinCost} SwapCoin`}
+                                    {isProcessing ? 'Processing...' : `Pay ${mintingFee} SwapCoin`}
                                 </SwapCoinButton>
                             ) : (
                                 <Button
@@ -475,7 +844,5 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         </Modal>
     );
 };
-
-
 
 export default NFTMintingModal;

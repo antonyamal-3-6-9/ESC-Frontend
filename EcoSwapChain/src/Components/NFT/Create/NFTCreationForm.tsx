@@ -408,8 +408,9 @@ const NFTCreationForm: React.FC = () => {
     });
     try {
       const response = await API.post('nfts/create/', sendData)
-      console.log(response)
+      console.log(response.data.NFT.id)
       setNftId(response.data.NFT.id)
+      console.log(nftId)
       setOpen(true)
     } catch (error) {
       console.log(error)
@@ -417,23 +418,6 @@ const NFTCreationForm: React.FC = () => {
 
     console.log(sendData)
   };
-
-
-
-  const mockUserBalance = 500; 
-
-  const handleConfirm = async (password: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (password === "123456") {
-          resolve();
-        } else {
-          reject(new Error("Invalid transaction password"));
-        }
-      }, 2000);
-    });
-  };
-
 
 
   return (
@@ -446,11 +430,9 @@ const NFTCreationForm: React.FC = () => {
           name: formData.name,
           imageUrl: String(formData.mainImage),
           swapCoinCost: Number(formData.price),
-          createdAt: new Date().toISOString(), // ✅ Fix: Correct date format
+          createdAt: new Date().toISOString(),
           id: nftId
         }}
-        onConfirm={handleConfirm}
-        userSwapCoinBalance={mockUserBalance}
       />
 
 

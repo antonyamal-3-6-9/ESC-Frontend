@@ -18,7 +18,10 @@ interface TokenBalanceResponse {
 }
 
 // 🔑 Derive Key from a Passphrase
-async function deriveKey(encKey: string): Promise<CryptoKey> {
+const DEFAULT_SALT = "4d7f2e9a1b3c8d6e"; // 16-character (128-bit) hex string
+
+
+async function deriveKey(encKey: string, salt: string = DEFAULT_SALT): Promise<CryptoKey> {
     const encoder = new TextEncoder();
     const keyMaterial = await browserCrypto.subtle.importKey(
         "raw",
@@ -31,7 +34,7 @@ async function deriveKey(encKey: string): Promise<CryptoKey> {
     return browserCrypto.subtle.deriveKey(
         {
             name: "PBKDF2",
-            salt: encoder.encode("some-salt"), // You should use a unique salt per user
+            salt: encoder.encode(salt),
             iterations: 100000,
             hash: "SHA-256",
         },
@@ -42,9 +45,9 @@ async function deriveKey(encKey: string): Promise<CryptoKey> {
     );
 }
 
-// 🔐 Encrypt Private Key (Web Crypto API)
+// 🔐 Encrypt Private Key
 export async function encryptPrivateKey(secretKey: Uint8Array, encKey: string): Promise<string> {
-    const iv = browserCrypto.getRandomValues(new Uint8Array(12)); // 12-byte IV for AES-GCM
+    const iv = browserCrypto.getRandomValues(new Uint8Array(12));
     const key = await deriveKey(encKey);
 
     const encrypted = await browserCrypto.subtle.encrypt(
@@ -53,23 +56,18 @@ export async function encryptPrivateKey(secretKey: Uint8Array, encKey: string): 
         secretKey
     );
 
-    // Concatenate IV + encrypted data, encode as Base64
+    // Combine IV + encrypted data and encode as Base64
     const encryptedData = new Uint8Array([...iv, ...new Uint8Array(encrypted)]);
-    return btoa(String.fromCharCode(...encryptedData)).slice(0, 100); // Limit to 100 chars
+    return uint8ArrayToBase64(encryptedData);
 }
 
 // 🔓 Decrypt Private Key
 export async function decryptPrivateKey(encryptedData: string, encKey: string): Promise<Uint8Array> {
     const key = await deriveKey(encKey);
 
-    const encryptedBytes = new Uint8Array(
-        atob(encryptedData)
-            .split("")
-            .map((char) => char.charCodeAt(0))
-    );
-
-    const iv = encryptedBytes.slice(0, 12); // Extract IV
-    const encryptedText = encryptedBytes.slice(12); // Extract Encrypted Data
+    const encryptedBytes = base64ToUint8Array(encryptedData);
+    const iv = encryptedBytes.slice(0, 12);
+    const encryptedText = encryptedBytes.slice(12);
 
     const decrypted = await browserCrypto.subtle.decrypt(
         { name: "AES-GCM", iv },
@@ -77,7 +75,16 @@ export async function decryptPrivateKey(encryptedData: string, encKey: string): 
         encryptedText
     );
 
-    return new Uint8Array(decrypted); // Return as Uint8Array
+    return new Uint8Array(decrypted);
+}
+
+// 🔄 Base64 Encoding Helpers
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+    return btoa(String.fromCharCode(...bytes));
+}
+
+function base64ToUint8Array(base64: string): Uint8Array {
+    return new Uint8Array(atob(base64).split("").map((char) => char.charCodeAt(0)));
 }
 
 
@@ -103,7 +110,8 @@ export async function getWallet(encryptedPrivateKey: string, encKey: string): Pr
 }
 
 // 🏦 Check token balance of a wallet
-export async function checkTokenBalance(wallet: string, mintAddress: string): Promise<TokenBalanceResponse> {
+export async function checkTokenBalance(wallet: string, mintAddress: string, rpcUrl: string): Promise<TokenBalanceResponse> {
+    const connection = new Connection(rpcUrl, "confirmed")
     try {
         const walletPublicKey = new PublicKey(wallet);
         const mintPublicKey = new PublicKey(mintAddress);

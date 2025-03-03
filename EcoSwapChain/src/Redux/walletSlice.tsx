@@ -5,7 +5,7 @@ interface WalletState {
 }
 
 const initialState: WalletState = {
-  isOpen: true,
+  isOpen: false,
 };
 
 const walletSlice = createSlice({

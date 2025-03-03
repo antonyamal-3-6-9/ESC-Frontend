@@ -41,12 +41,15 @@ window.Buffer = buffer.Buffer;
 
   return (
     <div>
+      <Navbar />
+      <CollapsibleAlert />
+      <BackDrop/>
       <Routes>
         <Route
           path='/'
           element={
             <>
-              <OrderDetails />
+              <LandingPage />
             </>
           }
         />

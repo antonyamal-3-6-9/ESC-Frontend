@@ -153,7 +153,7 @@ const Wallet: React.FC = () => {
     (swapcoins * 0.1).toFixed(2)
   const truncatedKey = `${walletData.public_key.slice(
     0,
-    6
+    30
   )}...${walletData.public_key.slice(-4)}`
 
   const handleCopy = (): void => {
@@ -224,7 +224,7 @@ const Wallet: React.FC = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Tooltip title={transaction.transaction_hash}>
                         <Typography variant="caption" color="text.secondary">
-                          {truncateString(transaction.transaction_hash, 4, 4)}
+                          {truncateString(transaction.transaction_hash, 15, 4)}
                         </Typography>
                       </Tooltip>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>

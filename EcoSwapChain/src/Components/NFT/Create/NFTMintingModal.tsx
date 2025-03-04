@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Modal,
     Box,
@@ -26,6 +26,10 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { motion } from 'framer-motion';
 import { API } from '../../API/api';
 import { decryptAndTransfer } from '../../../BlockChain/main';
+import { setAlertMessage, setAlertOn, setAlertSeverity } from '../../../Redux/alertBackdropSlice';
+import { useDispatch } from 'react-redux';
+import { Link } from 'react-router';
+
 
 interface NFTMintingModalProps {
     open: boolean;
@@ -37,7 +41,6 @@ interface NFTMintingModalProps {
         createdAt: string;
         id: number;
     };
-    onConfirm: (password: string) => Promise<string>; // Modified to return transaction hash
 }
 
 
@@ -190,6 +193,8 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         mintAddress: ""
     })
 
+    const dispatch = useDispatch()
+
 
     const steps = ['Review NFT', 'Confirm Payment', 'Sign Transaction', 'SwapCoin Transfer', 'Mint NFT'];
 
@@ -206,22 +211,25 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
 
             if (fetchedBalance < Number(mintingFee)) {
                 setInsufficientBalance(true); // Should be `true` when balance is low
-                alert("⚠️ Insufficient SwapCoin balance. Please top up before proceeding.");
+                dispatch(setAlertMessage("⚠️ Insufficient SwapCoin balance. Please top up before proceeding."));
+                dispatch(setAlertOn(true))
+                dispatch(setAlertSeverity("warning"))
             } else {
                 setInsufficientBalance(false);
             }
         } catch (error) {
             console.error("❌ Error fetching balance:", error);
-            alert("⚠️ Failed to fetch balance. Please try again.");
+            dispatch(setAlertMessage(`⚠️ Failed to fetch balance. ${error}` ));
+            dispatch(setAlertOn(true))
+            dispatch(setAlertSeverity("error"))
         }
     };
 
     const handleNext = async () => {
+        console.log(nftData.imageUrl)
         if (activeStep === 0) {
             await fetchBalance();  // Ensure balance is fetched before proceeding
-            if (!insufficientBalance) {
-                setActiveStep(1);
-            }
+          setActiveStep(1);
         } else if (activeStep === 2) {
             await handleConfirm(); // Ensure `handleConfirm()` runs asynchronously
         } else if (activeStep < 4) {
@@ -234,45 +242,6 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         setActiveStep((prevStep) => prevStep - 1);
     };
 
-    const simulateTransactionProgress = () => {
-        // Simulate transaction progress
-        const interval = setInterval(() => {
-            setTransactionProgress(prev => {
-                if (prev >= 100) {
-                    clearInterval(interval);
-                    return 100;
-                }
-                return prev + 5;
-            });
-        }, 200);
-    };
-
-    const simulateMintingProgress = () => {
-        // Simulate minting progress
-        const interval = setInterval(() => {
-            setMintingProgress(prev => {
-                if (prev >= 100) {
-                    clearInterval(interval);
-                    return 100;
-                }
-                return prev + 2;
-            });
-        }, 200);
-    };
-
-    // Watch for transaction progress completion and automatically move to next step
-    useEffect(() => {
-        if (transactionProgress === 100 && activeStep === 3) {
-            setTimeout(() => setActiveStep(4), 1000);
-        }
-    }, [transactionProgress, activeStep]);
-
-    // Watch for minting progress completion and automatically move to success
-    useEffect(() => {
-        if (mintingProgress === 100 && activeStep === 4) {
-            setTimeout(() => setActiveStep(5), 1000);
-        }
-    }, [mintingProgress, activeStep]);
 
     const initiateFeeTransfer = async () => {
         try {
@@ -284,7 +253,9 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
             return initResponse.data; // Return the full response data
         } catch (error) {
             console.error("❌ Fee transfer initiation failed:", error);
-            alert("Error: Failed to initiate fee transfer. Please try again.");
+            dispatch(setAlertMessage(`Error: Failed to initiate fee transfer. ${error}`));
+            dispatch(setAlertOn(true))
+            dispatch(setAlertSeverity("error"))
             throw error; // Re-throw to handle in `handleConfirm`
         }
     };
@@ -297,20 +268,46 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                 id: nftData.id
             });
 
-            console.log(mintResponse);
-            setNftBlkChainData(mintResponse.data.tx)
-            alert("✅ NFT successfully minted!");
+            console.log(mintResponse)
+            dispatch(setAlertMessage("✅ NFT successfully minted!"));
+            dispatch(setAlertOn(true))
+            dispatch(setAlertSeverity("success"))
+            return mintResponse.data.tx
         } catch (error) {
             console.error("❌ NFT minting failed:", error);
-            alert("Error: Failed to mint NFT. Please try again.");
+            dispatch(setAlertMessage("Error: Failed to mint NFT. Please try again."));
+            dispatch(setAlertOn(true))
+            dispatch(setAlertSeverity('error'))
             throw error;
         }
     };
 
+    // Add refs to track intervals
+    const txIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const mintIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const simulateTransactionProgress = () => {
+        // Clear existing interval
+        if (txIntervalRef.current) clearInterval(txIntervalRef.current);
+
+        txIntervalRef.current = setInterval(() => {
+            setTransactionProgress(prev => Math.min(prev + 5, 100));
+        }, 200);
+    };
+
+    const simulateMintingProgress = () => {
+        // Clear existing interval
+        if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
+
+        mintIntervalRef.current = setInterval(() => {
+            setMintingProgress(prev => Math.min(prev + 1, 100));
+        }, 200);
+    };
+
+    // Update handleConfirm with proper synchronization
     const handleConfirm = async () => {
         if (password.length < 6) {
             setError('Password must be at least 6 characters');
-            alert("⚠️ Password must be at least 6 characters long.");
             return;
         }
 
@@ -318,14 +315,14 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
             setIsProcessing(true);
             setError(null);
 
-            // Step 1: Initiate Fee Transfer
+            // Phase 1: Initiate Fee Transfer (0-25%)
             const responseData = await initiateFeeTransfer();
             setTreasuryPublicKey(responseData.treasuryKey || "unknown_key");
 
-            setActiveStep(3); // Move to transaction step
+            // Phase 2: Transaction Progress (25-75%)
+            setActiveStep(3);
             simulateTransactionProgress();
 
-            // Step 2: Transfer SwapCoin & Decrypt
             const txHash = await decryptAndTransfer(
                 mintingFee,
                 responseData.treasuryKey,
@@ -335,30 +332,64 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                 responseData.encKey
             );
 
-            if (!txHash) {
-                throw new Error("Transaction hash is missing. Transaction may have failed.");
-            }
+            // Force complete transaction progress
+            if (txIntervalRef.current) clearInterval(txIntervalRef.current);
+            setTransactionProgress(100);
 
-            setTransactionHash(txHash);
-            alert(`✅ Transaction Successful! Tx Hash: ${txHash}`);
-
+            // Phase 3: Minting Progress (75-100%)
+            setActiveStep(4);
             simulateMintingProgress();
 
-            // Step 3: Mint NFT
-            await mintNFT(txHash);
-        } catch (err) {
-            console.error("❌ Transaction error:", err);
-            alert(`Error: ${err instanceof Error ? err.message : "Transaction failed."}`);
+            const tx = await mintNFT(txHash);
+            setNftBlkChainData(tx);
 
-            setActiveStep(2); 
+            // Force complete minting progress
+            if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
+            setMintingProgress(100);
+
+        } catch (err) {
+            // Clear all intervals on error
+            if (txIntervalRef.current) clearInterval(txIntervalRef.current);
+            if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
+
+            // Reset progress states
+            setTransactionProgress(0);
+            setMintingProgress(0);
+            setActiveStep(2);
+
+            // Error handling
+            console.error("❌ Transaction error:", err);
+            dispatch(setAlertMessage(`Error: ${err instanceof Error ? err.message : "Transaction failed."}`));
+            dispatch(setAlertOn(true));
+            dispatch(setAlertSeverity("error"));
+        } finally {
             setIsProcessing(false);
         }
     };
 
+    // Update progress effects
+    useEffect(() => {
+        if (transactionProgress === 100 && activeStep === 3) {
+            setTimeout(() => setActiveStep(4), 500);
+        }
+    }, [transactionProgress, activeStep]);
+
+    useEffect(() => {
+        if (mintingProgress === 100 && activeStep === 4) {
+            setTimeout(() => setActiveStep(5), 500);
+        }
+    }, [mintingProgress, activeStep]);
 
 
-    const handleClose = () => {
+    const deleteObject = async () => {
+        try {
+            await API.delete(`nfts/del/object/${nftData.id}/`)
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
+    const handleClose = async () => {
         setActiveStep(0);
         setPassword('');
         setError(null);
@@ -366,6 +397,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         setMintingProgress(0);
         setTransactionHash('');
         setIsProcessing(false);
+        await deleteObject()
         onClose();
     };
 
@@ -504,7 +536,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
 
                         <motion.div variants={itemVariants}>
                             <Alert severity="info" sx={{ mb: 2 }}>
-                                This transaction will mint your NFT permanently on the blockchain and deduct {nftData.swapCoinCost} SwapCoin from your wallet.
+                                This transaction will mint your NFT permanently on the blockchain and deduct {mintingFee} SwapCoin from your wallet.
                             </Alert>
                         </motion.div>
                     </motion.div>
@@ -747,6 +779,8 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
 
                         <motion.div variants={itemVariants}>
                             <Button
+                                component={Link}  // Correct way to use a link
+                                to="/trader/nft/list"
                                 variant="contained"
                                 color="primary"
                                 onClick={handleClose}
@@ -754,6 +788,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                             >
                                 View My NFTs
                             </Button>
+
                         </motion.div>
                     </motion.div>
                 );
@@ -775,7 +810,6 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 p: 2,
-                height: "80%"
             }}
         >
             <Fade in={open}>
@@ -783,6 +817,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                     <IconButton
                         aria-label="close"
                         onClick={handleClose}
+                        disabled={activeStep <= 2}
                         sx={{
                             position: 'absolute',
                             right: 16,

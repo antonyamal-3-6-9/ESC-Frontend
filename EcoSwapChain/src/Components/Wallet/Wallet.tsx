@@ -127,8 +127,30 @@ const Wallet: React.FC = () => {
   const [walletData, setWalletData] = useState<WalletData>({
     public_key: '',
     balance: 0,
-    sent_transaction: [],
-    recieved_transaction: []
+    sent_transaction: [
+      {
+        id: 0,
+        transaction_hash: "",
+        amount: 0,
+        transfered_to: "",
+        transfered_from: "",
+        status: "",
+        transaction_type: "",
+        time_stamp: "",
+      }
+    ],
+    recieved_transaction: [
+      {
+        id: 0,
+        transaction_hash: "",
+        amount: 0,
+        transfered_to: "",
+        transfered_from: "",
+        status: "",
+        transaction_type: "",
+        time_stamp: "",
+      }
+    ]
   })
   const [tabValue, setTabValue] = useState<number>(0);
 
@@ -141,6 +163,9 @@ const Wallet: React.FC = () => {
       console.log(error)
     }
   }
+
+  console.log("Wallet component rendered");
+
 
   useEffect(() => {
     getWalletData()
@@ -200,17 +225,24 @@ const Wallet: React.FC = () => {
                   primary={
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                       <Tooltip title={transaction.transaction_type || 'Transfer'}>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'secondary.main' }}>
+                        <Typography variant="body2" component="span" sx={{ fontWeight: 600, color: 'secondary.main' }}>
                           {transaction.transaction_type === "REWARD"
                             ? "Reward"
-                            : transaction.transfered_from === walletData.public_key
-                              ? `To: ${truncateString(transaction.transfered_to)}`
-                              : `From: ${truncateString(transaction.transfered_from || '')}`
-                          }
+                            : transaction.transaction_type === "FEE"
+                              ? "Fee"
+                              : transaction.transaction_type === "SELL"
+                                ? "Sell"
+                                : transaction.transaction_type === "BUY"
+                                  ? "Buy"
+                                  : transaction.transfered_from === walletData.public_key
+                                    ? `To: ${truncateString(transaction.transfered_to)}`
+                                    : `From: ${truncateString(transaction.transfered_from || '')}`}
+
                         </Typography>
                       </Tooltip>
                       <Typography
                         variant="body2"
+                        component="span"
                         sx={{
                           fontWeight: 700,
                           color: transaction.transfered_from === walletData.public_key ? 'error.main' : 'accent.main'
@@ -239,7 +271,7 @@ const Wallet: React.FC = () => {
                           }}
                         />
                         {transaction.time_stamp && (
-                          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                          <Typography variant="caption" color="text.secondary" component="span" sx={{ ml: 1 }}>
                             {formatDate(transaction.time_stamp)}
                           </Typography>
                         )}
@@ -266,6 +298,7 @@ const Wallet: React.FC = () => {
         <AnimatedCard sx={{ maxWidth: 450, m: 1, minWidth: 300 }}>
           <Typography
             variant='h5'
+            component="div"
             gutterBottom
             sx={{
               color: 'secondary.main',
@@ -305,13 +338,13 @@ const Wallet: React.FC = () => {
             sx={{ my: 2 }}
           />
 
-          <Box sx={{ textAlign: 'center', py: 3 }}>
+          <Box sx={{ textAlign: 'center', py: 0 }}>
             <Typography
               variant='h3'
               sx={{ color: 'primary.main', fontWeight: 800 }}
             >
-              {walletData.balance}
-              <Typography component='span' sx={{ color: 'accent.main', ml: 1 }}>
+              {Number(walletData.balance).toFixed(2)}
+              <Typography component='span' sx={{ color: 'secondary.main', ml: 1 }}>
                 SWAP
               </Typography>
             </Typography>
@@ -342,7 +375,7 @@ const Wallet: React.FC = () => {
           </Grow>
 
           {/* Transaction History Section */}
-          <Box sx={{ mt: 2 }}>
+          <Box sx={{ mt: 0 }}>
             <Slide direction="right" in timeout={900}>
               <Typography
                 variant="subtitle2"
@@ -375,7 +408,7 @@ const Wallet: React.FC = () => {
               <Tab label="Sent" />
             </Tabs>
 
-            <Box sx={{ maxHeight: 240, overflowY: 'auto', px: 1 }}>
+            <Box sx={{ maxHeight: 230, overflowY: 'auto', px: 0 }}>
               {tabValue === 0 && renderTransactions([
                 ...walletData.recieved_transaction,
                 ...walletData.sent_transaction

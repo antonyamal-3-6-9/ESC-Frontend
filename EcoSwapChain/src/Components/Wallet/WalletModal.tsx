@@ -13,28 +13,32 @@ const WalletModal = () => {
   }
 
   return (
-    <>
-      <Modal open={isOpen} onClose={handleClose} disableAutoFocus disableEnforceFocus>
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '80%',
-            transform: 'translate(-50%, -50%)',
-            width: 500,
-            height: 700,
-            bgcolor: 'background.paper',
-            border: '2px solid #000',
-            boxShadow: 24,
-            p: 1,
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          <Wallet/>
-        </Box>
-      </Modal>
-    </>
+    <Modal 
+      open={isOpen} 
+      onClose={handleClose} 
+      disableAutoFocus 
+      disableEnforceFocus
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Box
+        sx={{
+          width: 450,
+          height: '90vh',
+          bgcolor: 'background.paper',
+          borderRadius: '16px',
+          boxShadow: 24,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        <Wallet />
+      </Box>
+    </Modal>
   )
 }
 

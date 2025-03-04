@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -25,17 +25,18 @@ import {
   MoreVert,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { API } from '../../API/api';
 
 // Types
 interface NFTAsset {
   id: string;
   name: string;
   description: string;
-  image: string;
+  mainImage: string;
   uri: string;
   price: number;
   symbol: string;
-  type: 'owned' | 'transferred' | 'interested';
+  nftType: 'CNFT' | 'NFT' | "" ;
   features: Record<string, string>;
   material?: string;
   condition?: string;
@@ -106,26 +107,36 @@ const NFTCollection: React.FC = () => {
   const [activeTab, setActiveTab] = useState('1');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Sample data - replace with your actual data
-  const nftAssets: NFTAsset[] = [
+  const [nftAssets, setNftAssets] = useState<NFTAsset[]>([  // ✅ Corrected type as an array
     {
-      id: '1',
-      name: 'Digital Art #1',
-      description: 'A unique digital artwork with vibrant colors',
-      image: '/api/placeholder/400/300',
-      uri: 'ipfs://QmXw8K7NqBTh4TWBUHx',
-      price: 0.5,
-      symbol: 'NFT',
-      type: 'owned',
-      features: {
-        'Artist': 'John Doe',
-        'Edition': '1 of 1',
-      },
-      material: 'Digital',
-      condition: 'Mint',
-    },
-    // Add more sample NFTs...
-  ];
+      id: '0',
+      name: '',
+      description: '',
+      mainImage: '',
+      uri: '',
+      price: 0,
+      symbol: '',
+      nftType: '',
+      features: {},
+      material: '',
+      condition: '',
+    }
+  ]);
+
+  const fetchData = async () => {
+    try {
+      const response = await API.get("nfts/owner/list/")
+      setNftAssets(response.data.nfts)
+      console.log(response.data.nfts)
+      console.log(nftAssets)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() =>  {
+    fetchData();
+  }, [])
 
   const handleCopyURI = (uri: string) => {
     navigator.clipboard.writeText(uri);
@@ -145,7 +156,7 @@ const NFTCollection: React.FC = () => {
           <CardMedia
             component="img"
             height="240"
-            image={nft.image}
+            image={`http://localhost:8000${nft.mainImage}`}
             alt={nft.name}
             sx={{ objectFit: 'cover' }}
           />
@@ -195,13 +206,13 @@ const NFTCollection: React.FC = () => {
                   <Favorite />
                 </IconButton>
               </Tooltip>
-              {nft.type === 'owned' && (
+
                 <Tooltip title="Transfer">
                   <IconButton size="small" sx={{ color: 'white' }}>
                     <SwapHoriz />
                   </IconButton>
                 </Tooltip>
-              )}
+
             </Box>
             <Tooltip title="More Options">
               <IconButton size="small" sx={{ color: 'white' }}>
@@ -259,16 +270,15 @@ const NFTCollection: React.FC = () => {
       <TabContext value={activeTab}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           <TabList onChange={(_, value) => setActiveTab(value)}>
-            <Tab label="Owned NFTs" value="1" />
-            <Tab label="Transferred" value="2" />
-            <Tab label="Interested" value="3" />
+            <Tab label="NFTs" value="1" />
+            <Tab label="CNFTs" value="2" />
           </TabList>
         </Box>
         
         <TabPanel value="1">
           <Grid container spacing={3}>
             {nftAssets
-              .filter(nft => nft.type === 'owned')
+              .filter(nft => nft.nftType === null)
               .map(nft => renderNFTCard(nft))}
           </Grid>
         </TabPanel>
@@ -276,18 +286,11 @@ const NFTCollection: React.FC = () => {
         <TabPanel value="2">
           <Grid container spacing={3}>
             {nftAssets
-              .filter(nft => nft.type === 'transferred')
+              .filter(nft => nft.nftType === 'CNFT')
               .map(nft => renderNFTCard(nft))}
           </Grid>
         </TabPanel>
         
-        <TabPanel value="3">
-          <Grid container spacing={3}>
-            {nftAssets
-              .filter(nft => nft.type === 'interested')
-              .map(nft => renderNFTCard(nft))}
-          </Grid>
-        </TabPanel>
       </TabContext>
     </Container>
   );

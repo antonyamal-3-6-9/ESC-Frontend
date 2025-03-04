@@ -96,7 +96,7 @@ const Navbar = () => {
               Wallet
             </Button>
           ) : null}
-        <Link to={"/nft/create"}>
+        <Link to={"/trader/nft/create"}>
           <Button
             color='inherit'
             sx={{

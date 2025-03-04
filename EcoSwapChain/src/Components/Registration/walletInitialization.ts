@@ -34,6 +34,7 @@ async function rewardTx(wallet: Wallet) {
         return tx.data.transactionData
     } catch (error) {
         console.log(error)
+        return { error: error instanceof Error ? error.message : error};
     }
 }
 

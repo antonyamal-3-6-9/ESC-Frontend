@@ -157,6 +157,8 @@ const NFTCreationForm: React.FC = () => {
     main: []
   })
 
+  const [imageUrl, setImageUrl] = useState<string>("")
+
 
   async function getCat() {
     try {
@@ -408,15 +410,14 @@ const NFTCreationForm: React.FC = () => {
     });
     try {
       const response = await API.post('nfts/create/', sendData)
-      console.log(response.data.NFT.id)
+      console.log(response.data.NFT)
       setNftId(response.data.NFT.id)
+      setImageUrl(response.data.NFT.mainImage)
       console.log(nftId)
       setOpen(true)
     } catch (error) {
       console.log(error)
     }
-
-    console.log(sendData)
   };
 
 
@@ -428,7 +429,7 @@ const NFTCreationForm: React.FC = () => {
         onClose={() => setOpen(false)}
         nftData={{
           name: formData.name,
-          imageUrl: String(formData.mainImage),
+          imageUrl: imageUrl,
           swapCoinCost: Number(formData.price),
           createdAt: new Date().toISOString(),
           id: nftId

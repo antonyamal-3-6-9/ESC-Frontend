@@ -51,56 +51,66 @@ const Register = () => {
   };
 
   const activateWallet = async () => {
-    const wallet = await create();
-    if (!wallet.status) {
-      return false
-    } else {
-      setWalletData((prev) => ({
-        ...prev,
-        pubKey: wallet.pubKey,
-        passKey: wallet.passKey,
-        status: wallet.status
-      }))
-      return true
+    try {
+      const wallet = await create();
+      if (!wallet.status) {
+        return false;
+      } else {
+        setWalletData((prev) => ({
+          ...prev,
+          pubKey: wallet.pubKey,
+          passKey: wallet.passKey,
+          status: wallet.status
+        }));
+        return true;
+      }
+    } catch (error) {
+      console.error("Error activating wallet:", error);
+      return false;
     }
-  }
+  };
 
   const handleSubmit = async () => {
     try {
       dispatch(setLoading(true));
-      const registerResponse = await PublicAPI.post(
-        `trader/register/`,
-        {
-          first_name: registerData.firstName,
-          last_name: registerData.lastName,
-          email: registerData.email,
-          password: registerData.password,
-        }
-      );
+
+      const registerResponse = await PublicAPI.post(`trader/register/`, {
+        first_name: registerData.firstName,
+        last_name: registerData.lastName,
+        email: registerData.email,
+        password: registerData.password,
+      });
+
       setRegisterData({
         firstName: "",
         lastName: "",
         email: "",
         password: "",
-      })
-      setOpen(false)
+      });
+      setOpen(false);
+
       localStorage.setItem("token", registerResponse.data.token);
       dispatch(setUser(registerResponse.data.user));
       dispatch(activateUser(true));
-      if (await activateWallet()) {
-        dispatch(setLoading(false))
-        setKeyModalOpen(true)
+
+      const walletActivated = await activateWallet();
+      if (walletActivated) {
+        setKeyModalOpen(true);
       } else {
-        dispatch(setLoading(false))
-        dispatch(setAlertOn(true))
-        dispatch(setAlertMessage("Error Creating Wallet, try again later"))
-        dispatch(setAlertSeverity("error"))
+        dispatch(setAlertOn(true));
+        dispatch(setAlertMessage("Error Creating Wallet, try again later"));
+        dispatch(setAlertSeverity("error"));
       }
     } catch (error) {
-      console.log(error);
+      console.error("Registration error:", error);
+      dispatch(setAlertOn(true));
+      dispatch(setAlertMessage("Registration failed. Please try again."));
+      dispatch(setAlertSeverity("error"));
+    } finally {
       dispatch(setLoading(false));
     }
   };
+
 
   const handleOtpCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

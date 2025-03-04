@@ -7,32 +7,24 @@ import Login from './Components/Login/Login'
 import LandingPage from './Components/LandingPage/LandingPage'
 import { useDispatch } from 'react-redux'
 import { checkAuth } from './Redux/userActions'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import WalletModal from './Components/Wallet/WalletModal'
 import BackDrop from './Components/Backdrop/Backdrop'
 import ProductGrid from './Components/NFT/listNFT'
 import ProductDetailPage from './Components/NFT/NFTDetails'
-
 import CreateNFT from './Components/NFT/Create/CreateNFT'
-
-import NFTCreationForm from './Components/NFT/Create/NFTCreationForm'
 import NFTCollection from './Components/NFT/Collection/CollectionListing'
 import OrderDetails from './Components/Orders/OrderDetails'
-import { useAppSelector } from './store'
 import NFTOrderListing from './Components/Orders/OrderList'
-
-
 
 import Navbar from './Components/NavBar/Navbar'
 import CollapsibleAlert from './Components/Alert/Alert'
-import NFTMintingModal from './Components/NFT/Create/NFTMintingModal'
 
 import * as buffer from "buffer";
 window.Buffer = buffer.Buffer;
 
 
   function App() {
-    const { isOpen } = useAppSelector(state => state.wallet)
     const dispatch = useDispatch()
 
     useEffect(() => {
@@ -45,6 +37,8 @@ window.Buffer = buffer.Buffer;
       <CollapsibleAlert />
       <BackDrop/>
       <Routes>
+
+
         <Route
           path='/'
           element={
@@ -53,13 +47,15 @@ window.Buffer = buffer.Buffer;
             </>
           }
         />
-        <Route path='trader/register' element={<Register />} />
+
+
+        <Route path='/trader/register' element={<Register />} />
         <Route path='/trader/login' element={<Login />} />
-        <Route path='/nft/create' element={<CreateNFT />} />
+
+        <Route path='/trader/nft/create' element={<CreateNFT />} />
+        <Route path="/trader/nft/list" element={<NFTCollection/>} />
+
       </Routes>
-      {
-        isOpen && <WalletModal />
-      }
       <WalletModal/>
       <BackDrop/>
     </div>

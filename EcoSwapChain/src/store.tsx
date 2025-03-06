@@ -1,25 +1,24 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { ThunkDispatch } from "redux-thunk";
+import { ThunkDispatch, thunk } from "redux-thunk";
 import { Action } from "redux";
 import apiEndpointsReducer from "./Redux/apiEndPoint";
 import userReducer from "./Redux/userSlice";
 import alertBackdropReducer from "./Redux/alertBackdropSlice";
 import walletReducer from "./Redux/walletSlice"
-
-import { thunk } from "redux-thunk";
-
+import nftReducer from "./Redux/nftSlice"
 
 const store = configureStore({
   reducer: {
     apiEndpoints: apiEndpointsReducer,
     user: userReducer,
     alertBackdrop: alertBackdropReducer,
-    wallet: walletReducer
+    wallet: walletReducer,
+    nft: nftReducer
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(thunk),
 });
 
-// ✅ Correctly Type Dispatch to Support Thunks
+// ✅ Correctly Type Dispatch to Support Thunk
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch & ThunkDispatch<RootState, unknown, Action>;
 

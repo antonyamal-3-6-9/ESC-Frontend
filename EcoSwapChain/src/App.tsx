@@ -16,6 +16,9 @@ import CreateNFT from './Components/NFT/Create/CreateNFT'
 import NFTCollection from './Components/NFT/Collection/CollectionListing'
 import OrderDetails from './Components/Orders/OrderDetails'
 import NFTOrderListing from './Components/Orders/OrderList'
+import ProfileCard from './Components/Profile/ProfileCard'
+
+
 
 import Navbar from './Components/NavBar/Navbar'
 import CollapsibleAlert from './Components/Alert/Alert'
@@ -53,7 +56,8 @@ window.Buffer = buffer.Buffer;
         <Route path='/trader/login' element={<Login />} />
 
         <Route path='/trader/nft/create' element={<CreateNFT />} />
-        <Route path="/trader/nft/list" element={<NFTCollection/>} />
+        <Route path='/trader/profile' element={<ProfileCard />} />
+        <Route path='/nft/retrieve/:id' element={<ProductDetailPage />} />
 
       </Routes>
       <WalletModal/>

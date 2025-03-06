@@ -2,7 +2,7 @@ import { ThunkAction } from "redux-thunk";
 import { Action } from "redux";
 import { RootState } from "../store"; // Import RootState
 import { setUser, activateUser, clearUser } from "./userSlice";
-import { PublicAPI, API } from "../Components/API/api";
+import { API } from "../Components/API/api";
 
 // ✅ Define Thunk Type
 export type AppThunk<ReturnType = void> = ThunkAction<

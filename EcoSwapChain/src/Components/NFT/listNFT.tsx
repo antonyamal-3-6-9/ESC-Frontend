@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   Box,
   Card,
@@ -7,13 +7,17 @@ import {
   CardMedia,
   Grid,
   Typography,
-  Chip,
-  Rating,
   IconButton,
-  Fade
+  Button,
+  Fade,
+  Grid2,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { ShoppingCart, Favorite } from '@mui/icons-material';
+import {  Favorite, ShoppingCart} from '@mui/icons-material';
+import { useAppSelector } from '../../store';
+import { Link } from 'react-router';
+import { fetchProducts } from '../../Redux/nftActions';
+import { useDispatch } from 'react-redux';
 
 // Types
 interface Product {
@@ -21,10 +25,12 @@ interface Product {
   name: string;
   description: string;
   price: number;
-  rating: number;
   image: string;
-  tags: string[];
-  stockStatus: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  rootCategory: string; // Flattened from product.rootCategory.name
+  mainCategory: string; // Flattened from product.mainCategory.name
+  address: string;
+  uri: string;
+  symbol: string;
 }
 
 // Styled Components
@@ -40,7 +46,7 @@ const ProductCard = styled(Card)(({ theme }) => ({
     },
     '& .product-actions': {
       opacity: 1,
-      transform: 'translateY(0)',
+      transform: 'translateY(7)',
     },
   },
 }));
@@ -72,47 +78,23 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
-const TagsContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  gap: theme.spacing(1),
-  flexWrap: 'wrap',
-  marginTop: theme.spacing(1),
-}));
-
-const StockChip = styled(Chip)<{ stockstatus: string }>(({ theme, stockstatus }) => ({
-  backgroundColor: 
-    stockstatus === 'In Stock' 
-      ? theme.palette.accent.main 
-      : stockstatus === 'Low Stock'
-      ? theme.palette.secondary.light
-      : theme.palette.primary.light,
-  color: theme.palette.surface.contrastText,
-  fontWeight: 600,
-}));
-
 // Component
 const ProductGrid: React.FC = () => {
-  // Sample data - replace with your actual data
-  const products: Product[] = [
-    {
-      id: '1',
-      name: 'Premium Product',
-      description: 'High-quality product with premium features and elegant design.',
-      price: 299.99,
-      rating: 4.5,
-      image: '/api/placeholder/400/320',
-      tags: ['Premium', 'New Arrival'],
-      stockStatus: 'In Stock',
-    },
-    // Add more products as needed
-  ];
+
+  const products = useAppSelector((state) => state.nft.products);;
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchProducts() as never);
+  }, []);
 
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={5} sx={{ p: 5, mb: 2 }}>
       {products.map((product) => (
         <Grid item xs={12} sm={6} md={4} key={product.id}>
           <Fade in timeout={800}>
             <ProductCard>
+              {/* Product Actions */}
               <ProductActions className="product-actions">
                 <StyledIconButton size="small">
                   <Favorite />
@@ -121,67 +103,102 @@ const ProductGrid: React.FC = () => {
                   <ShoppingCart />
                 </StyledIconButton>
               </ProductActions>
-              
+
+              <Grid2 container spacing={1} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1}}>
+                <Typography variant="body1" gutterBottom sx={{ color: 'text.primary', fontWeight: 600 }}>
+                  {product.price} $
+                </Typography>
+                <Typography variant="body1" gutterBottom sx={{ color: 'text.primary', fontWeight: 600 }}>
+                  {product.symbol}
+                </Typography>
+              </Grid2>
+
+
+
+              {/* Product Image */}
               <StyledCardMedia
-                image={product.image}
+                image={`http://localhost:8000/${product.image}`}
                 title={product.name}
               />
-              
+
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                  {product.name}
-                </Typography>
+
+
+                {/* Name */}
+                <Grid2 container spacing={1} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'start', mb: 2 }}>
+                  <Grid2 >
+                    <Typography sx={{ color: 'text.secondary', mr: 1 }}>
+                      {`Name:`}
+                    </Typography>
+                  </Grid2>
+                  <Grid2 >
+                    <Link to={`/nft/retrieve/${product.id}`} style={{ textDecoration: 'none' }}>
+                      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                        {product.name}
+                      </Typography>
+                    </Link>
+                  </Grid2>
+                </Grid2>
+
+                {/* Address */}
+                <Grid2 container spacing={1} sx={{ display: 'flex', alignItems: 'start', flexDirection: "column", justifyContent: 'start', mb: 2 }}>
+                  <Grid2 >
+                    <Typography sx={{ color: 'text.secondary', mr: 1 }}>
+                      {`Mint Address:`}
+                    </Typography>
+                  </Grid2>
+                  <Grid2 >
+                    <Typography variant="body1" gutterBottom sx={{ fontWeight: 500 }}>
+                      {product.address}
+                    </Typography>
+                  </Grid2>
+                </Grid2>
+
+                {/* Description */}
+                <Grid2 container spacing={1} sx={{ display: 'flex', alignItems: 'start', flexDirection: "column", justifyContent: 'start', mb: 2 }}>
+                  <Grid2 >
+                    <Typography sx={{ color: 'text.secondary', mr: 1 }}>
+                      {`Description:`}
+                    </Typography>
+                  </Grid2>
+                  <Grid2 >
+                    <Typography variant="body2" gutterBottom sx={{ fontWeight: 400 }}>
+                      {product.description}
+                    </Typography>
+                  </Grid2>
+                </Grid2>
+
+                {/* URI */}
+                <Grid2 container spacing={1} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'start', mb: 2 }}>
+                  <Grid2 >
+                    <Typography sx={{ color: 'text.secondary', mr: 1 }}>
+                      {`URI:`}
+                    </Typography>
+                  </Grid2>
+                  <Grid2 >
+                    <Typography variant="body2" gutterBottom sx={{ fontWeight: 400 }}>
+                      <a href={product.uri} target="_blank" rel="noopener noreferrer">
+                        {product.uri}
+                      </a>
+                    </Typography>
+                  </Grid2>
+                </Grid2>
+
+                <Grid2 container spacing={1} sx={{ display: 'flex', alignItems: 'start', justifyContent: 'start', mb: 2 }}>
+                  <Grid2 >
+                    <Typography variant="body2" gutterBottom sx={{ fontWeight: 400 }}>
+                      {product.rootCategory}
+                    </Typography>
+                  </Grid2>
+                  <Grid2 >
+                    <Typography variant="body2" gutterBottom sx={{ fontWeight: 400 }}>
+                      {product.mainCategory}
+                    </Typography>
+                  </Grid2>
+                </Grid2>
                 
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary" 
-                  sx={{ mb: 2, height: 48, overflow: 'hidden' }}
-                >
-                  {product.description}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Rating 
-                    value={product.rating} 
-                    precision={0.5} 
-                    readOnly 
-                    size="small"
-                  />
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary" 
-                    sx={{ ml: 1 }}
-                  >
-                    ({product.rating})
-                  </Typography>
-                </Box>
-                
-                <Typography 
-                  variant="h6" 
-                  color="primary" 
-                  sx={{ fontWeight: 700, mb: 1 }}
-                >
-                  ${product.price.toFixed(2)}
-                </Typography>
-                
-                <TagsContainer>
-                  {product.tags.map((tag) => (
-                    <Chip 
-                      key={tag} 
-                      label={tag} 
-                      size="small" 
-                      sx={{ 
-                        backgroundColor: 'background.default',
-                        fontWeight: 500,
-                      }} 
-                    />
-                  ))}
-                  <StockChip 
-                    label={product.stockStatus}
-                    size="small"
-                    stockstatus={product.stockStatus}
-                  />
-                </TagsContainer>
+
+               
               </CardContent>
             </ProductCard>
           </Fade>

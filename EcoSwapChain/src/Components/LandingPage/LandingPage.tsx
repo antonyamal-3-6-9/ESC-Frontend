@@ -7,6 +7,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet'
 import Grid from '@mui/material/Grid2'
 import { Hero } from './Hero'
 import { Stats } from './Stats'
+import ProductGrid from '../NFT/listNFT'
 
 const LandingPage = () => {
   
@@ -100,6 +101,9 @@ const LandingPage = () => {
             </Grid>
           ))}
         </Grid>
+      </Box>
+      <Box>
+        <ProductGrid />
       </Box>
 
       {/* CTA Section */}

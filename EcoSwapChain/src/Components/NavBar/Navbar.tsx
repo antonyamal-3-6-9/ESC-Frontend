@@ -38,25 +38,32 @@ const Navbar = () => {
               width: 60,
               margin: 1,
               borderRadius: '50%',
-              boxShadow: theme => theme.shadows[2],
+              boxShadow: theme => theme.shadows[0],
               // Add other theme-aware styles
               filter: theme =>
-                `drop-shadow(0 2px 4px ${theme.palette.primary.main})`
+                `drop-shadow(0 2px 4px ${theme.palette.accent.main})`
             }}
           />
           <Typography
-            variant='h6'
+            variant="h6"
+            component={Link}
+            to="/"
             sx={{
-              fontWeight: 'bold',
-              color: 'primary.contrastText',
-              ml: 2,
-              fontFamily: theme => theme.typography.fontFamily,
-              textTransform: 'uppercase',
-              letterSpacing: 1.2
+              fontWeight: "bold",
+              color: "primary.contrastText",
+              ml: 0,
+              fontFamily: (theme) => theme.typography.fontFamily,
+              textTransform: "uppercase",
+              letterSpacing: 1.2,
+              textDecoration: "none", // Removes underline
+              "&:hover": {
+                textDecoration: "none", // Ensures it doesn't appear on hover
+              },
             }}
           >
-            Swap Chain
+            SwapChain
           </Typography>
+
         </Box>
 
         <Box
@@ -66,7 +73,7 @@ const Navbar = () => {
             gap: 2 // Modern spacing instead of marginRight
           }}
         >
-          <Link to='/trader/login'>
+          <Link to={user.active ? '/trader/profile' : "/trader/login"}>
             <Button
               color='inherit'
               sx={{

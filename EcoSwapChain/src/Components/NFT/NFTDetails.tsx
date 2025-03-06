@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -26,6 +26,8 @@ import {
   Shield,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { useParams } from 'react-router';
+import { PublicAPI } from '../API/api';
 
 // Types
 interface ProductImage {
@@ -34,11 +36,53 @@ interface ProductImage {
   alt: string;
 }
 
-// interface ProductFeature {
-//   icon: string;
-//   title: string;
-//   description: string;
-// }
+interface Certification{
+  name: string;
+  description: string;
+  registerNumber: string;
+}
+
+interface Product{
+  rootCategory: string | null; 
+  mainCategory: string | null; 
+  condition: string | null;
+  materials: string[];
+  certifications: Certification;
+  features: Record<string, string>
+  additionalMaterials: string[] | null; 
+  recycledContent: number | null; // Flattened from product.recycled_content
+  recyclability: boolean;
+  carbonFootprint: number | null; // Flattened from product.carbon_footprint
+  energyEfficiency: number | null; // Flattened from product.energy_efficiency
+  durability: number | null; // Flattened from product.durability
+  repairabilityScore: number | null; // Flattened from product.repairability_score
+  ethicalSourcing: boolean;
+  crueltyFree: boolean;
+  plasticFree: boolean;
+  natural: boolean;
+  destructible: boolean;
+  hazardous: boolean;
+  additionalImages: ProductImage[]; 
+}
+
+
+interface Details {
+  id: string;
+  name: string;
+  symbol: string
+  description: string;
+  price: number;
+  image: string;
+  address: string;
+  uri: string;
+  createdAt: string;
+  leafIndex: number | null; // Flattened from nft.leaf_index
+  treeAddress: string | null; // Flattened from nft.tree_address
+  ownerPublicKey: string;
+  nftType: string;
+  exchange: boolean;
+  product: Product;
+}
 
 interface ProductDetails {
   id: string;
@@ -108,6 +152,67 @@ const FeatureCard = styled(Paper)(({ theme }) => ({
 
 const ProductDetailPage: React.FC = () => {
   // Sample data - replace with your actual data
+  const { id } = useParams()
+  console.log(useParams())
+  
+  const [nftData, setNFTData] = useState<Details>({
+    id: "",
+    name: "",
+    symbol: "",
+    description: "",
+    price: 0,
+    image: "",
+    address: "",
+    uri: "",
+    createdAt: "",
+    leafIndex: null,
+    treeAddress: null,
+    ownerPublicKey: "",
+    nftType: "",
+    exchange: false,
+    product: {
+      rootCategory: null,
+      mainCategory: null,
+      condition: null,
+      materials: [],
+      certifications: {
+        name: "",
+        description: "",
+        registerNumber: "",
+      },
+      features: {},
+      additionalMaterials: null,
+      recycledContent: null,
+      recyclability: false,
+      carbonFootprint: null,
+      energyEfficiency: null,
+      durability: null,
+      repairabilityScore: null,
+      ethicalSourcing: false,
+      crueltyFree: false,
+      plasticFree: false,
+      natural: false,
+      destructible: false,
+      hazardous: false,
+      additionalImages: [],
+    },
+  });
+
+
+  async function fetchNFTDetails() {
+    try {
+      const response = await PublicAPI.get(`nfts/retrieve/${id}/`);
+      console.log(response.data);
+      setNFTData(response.data.nft);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    fetchNFTDetails();
+  }, [])
+
   const product: ProductDetails = {
     id: '1',
     name: 'Premium Product',
@@ -142,17 +247,17 @@ const ProductDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('1');
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4, mt: 8}}>
       <Grid container spacing={4}>
         {/* Left Column - Images */}
         <Grid item xs={12} md={6}>
           <Fade in timeout={800}>
             <Box>
               <MainImage elevation={2}>
-                <img src={selectedImage.url} alt={selectedImage.alt} />
+                <img src={`http://localhost:8000/${nftData.image}`} alt={selectedImage.alt} />
               </MainImage>
               <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                {product.images.map((image) => (
+                {nftData.product.additionalImages.map((image) => (
                   <Zoom in key={image.id} style={{ transitionDelay: '200ms' }}>
                     <ThumbnailImage
                       elevation={selectedImage.id === image.id ? 3 : 1}
@@ -164,7 +269,7 @@ const ProductDetailPage: React.FC = () => {
                             : 'none',
                       }}
                     >
-                      <img src={image.url} alt={image.alt} />
+                      <img src={`http://localhost:8000/${image.url}`} alt={image.alt} />
                     </ThumbnailImage>
                   </Zoom>
                 ))}
@@ -178,19 +283,24 @@ const ProductDetailPage: React.FC = () => {
           <Fade in timeout={1000}>
             <Box>
               <Typography variant="h4" gutterBottom fontWeight="600">
-                {product.name}
+                {nftData.name}
               </Typography>
 
               <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                {product.tags.map((tag) => (
+          
                   <Chip
-                    key={tag}
-                    label={tag}
+                    label={nftData.product.rootCategory}
                     color="primary"
                     size="small"
                     sx={{ borderRadius: 1 }}
-                  />
-                ))}
+                />
+                <Chip
+                  label={nftData.product.mainCategory}
+                  color="primary"
+                  size="small"
+                  sx={{ borderRadius: 1 }}
+                />
+                
               </Stack>
 
               <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
@@ -206,11 +316,11 @@ const ProductDetailPage: React.FC = () => {
                 fontWeight="700"
                 sx={{ mb: 3 }}
               >
-                ${product.price.toFixed(2)}
+                ${Number(nftData.price).toFixed(2)}
               </Typography>
 
               <Typography variant="body1" sx={{ mb: 3 }}>
-                {product.description}
+                {nftData.description}
               </Typography>
 
               <Stack direction="row" alignItems="center" spacing={3} sx={{ mb: 4 }}>
@@ -260,7 +370,7 @@ const ProductDetailPage: React.FC = () => {
                 </Box>
                 <TabPanel value="1">
                   <Stack spacing={2}>
-                    {product.features.map((feature, index) => (
+                    {nftData.product.materials.map((feature, index) => (
                       <Typography key={index} variant="body1">
                         • {feature}
                       </Typography>
@@ -269,7 +379,7 @@ const ProductDetailPage: React.FC = () => {
                 </TabPanel>
                 <TabPanel value="2">
                   <Stack spacing={2}>
-                    {Object.entries(product.specifications).map(([key, value]) => (
+                    {Object.entries(nftData.product.features).map(([key, value]) => (
                       <Box key={key}>
                         <Typography variant="subtitle2" color="text.secondary">
                           {key}

@@ -38,7 +38,8 @@ interface NFTAsset {
   symbol: string;
   nftType: 'CNFT' | 'NFT' | "" ;
   features: Record<string, string>;
-  material?: string;
+  rootCategory?: string;
+  mainCategory: string;
   condition?: string;
 }
 
@@ -118,7 +119,8 @@ const NFTCollection: React.FC = () => {
       symbol: '',
       nftType: '',
       features: {},
-      material: '',
+      rootCategory: '',
+      mainCategory: "",
       condition: '',
     }
   ]);
@@ -235,17 +237,21 @@ const NFTCollection: React.FC = () => {
                   />
                 ))}
               </Stack>
-              {(nft.material || nft.condition) && (
+              {(nft.rootCategory || nft.mainCategory || nft.condition) && (
                 <>
                   <Typography variant="subtitle2" gutterBottom>
                     Additional Details
                   </Typography>
                   <Stack direction="row" spacing={2}>
-                    {nft.material && (
+                    {nft.rootCategory && (
                       <Typography variant="body2">
-                        Material: {nft.material}
+                        Root Category: {nft.rootCategory}
                       </Typography>
                     )}
+                    {nft.mainCategory && (
+                      <Typography variant="body2">
+                        Main Category: {nft.mainCategory}
+                      </Typography>)}
                     {nft.condition && (
                       <Typography variant="body2">
                         Condition: {nft.condition}

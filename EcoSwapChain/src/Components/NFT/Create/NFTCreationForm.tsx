@@ -32,6 +32,7 @@ import { useDispatch } from 'react-redux';
 import { setAlertMessage, setAlertOn, setAlertSeverity } from '../../../Redux/alertBackdropSlice';
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import CertificationModal from './AddCertification';
+import RouteDisplayC from '../../RouteDisplay';
 
 
 const materialsList = [
@@ -718,8 +719,9 @@ const NFTCreationForm: React.FC = () => {
 
       <Fade in timeout={800}>
         <form onSubmit={submitData}>
+          <RouteDisplayC />
           <Card sx={{
-            p: 4, maxWidth: 1200, mx: 'auto', mt: 10
+            p: 4, maxWidth: 1200, mx: 'auto', mt: 12
           }}>
             <Typography variant="h4" gutterBottom fontWeight="600">
               Create New NFT

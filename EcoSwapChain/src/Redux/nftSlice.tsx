@@ -11,6 +11,7 @@ interface NFT {
     address: string;
     uri: string;
     symbol: string;
+    condition: string;
 }
 
 interface NFTState {

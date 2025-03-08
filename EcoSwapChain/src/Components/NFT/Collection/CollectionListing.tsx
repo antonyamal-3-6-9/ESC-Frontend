@@ -32,7 +32,7 @@ interface NFTAsset {
   id: string;
   name: string;
   description: string;
-  mainImage: string;
+  image: string;
   uri: string;
   price: number;
   symbol: string;
@@ -113,7 +113,7 @@ const NFTCollection: React.FC = () => {
       id: '0',
       name: '',
       description: '',
-      mainImage: '',
+      image: '',
       uri: '',
       price: 0,
       symbol: '',
@@ -158,7 +158,7 @@ const NFTCollection: React.FC = () => {
           <CardMedia
             component="img"
             height="240"
-            image={`http://localhost:8000${nft.mainImage}`}
+            image={`http://localhost:8000${nft.image}`}
             alt={nft.name}
             sx={{ objectFit: 'cover' }}
           />

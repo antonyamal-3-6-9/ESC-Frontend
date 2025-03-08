@@ -11,13 +11,3 @@ export type AppThunk<ReturnType = void> = ThunkAction<
     Action
 >;
 
-export const fetchProducts = (): AppThunk => async (dispatch) => {
-
-    try {
-        const response = await PublicAPI.get('/nfts/list/all/');
-        console.log(response)
-        dispatch(addProduct(response.data.nfts));
-    } catch (error) {
-        console.log(error)
-    }
-};

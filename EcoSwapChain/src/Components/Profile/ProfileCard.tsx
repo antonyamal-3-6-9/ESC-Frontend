@@ -18,6 +18,7 @@ import {
     VerifiedUser
 } from '@mui/icons-material';
 import NFTCollection from '../NFT/Collection/CollectionListing';
+import RouteDisplayC from '../RouteDisplay';
 
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -138,6 +139,7 @@ export const UserProfile = () => {
 
     return (
         <Container maxWidth="lg" sx={{ mt: 10, mb: 4 }}>
+            <RouteDisplayC />
             <Fade in={true} timeout={800}>
                 <StyledCard>
                     <Grid container spacing={4}>

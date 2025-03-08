@@ -4,6 +4,7 @@ interface UserState {
   username: string | null;
   role: string | null;
   active: boolean;
+  id: number;
 }
 
 
@@ -12,6 +13,7 @@ const initialState: UserState = {
   username: null,
   role: null,
   active: false,
+  id: 0,
 };
 
 // Create slice to handle user data
@@ -22,6 +24,7 @@ const userSlice = createSlice({
     setUser: (state, action) => {
       state.username = `${action.payload.first_name} ${action.payload.last_name}`;
       state.role = action.payload.role;
+      state.id = action.payload.id
       localStorage.setItem('role', action.payload.role)
     },
     activateUser: (state, action) => {

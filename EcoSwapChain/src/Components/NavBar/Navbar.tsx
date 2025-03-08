@@ -89,6 +89,7 @@ const Navbar = () => {
           </Link>
 
           {user.active ? (
+            <>
             <Button
               color='inherit'
               sx={{
@@ -101,9 +102,24 @@ const Navbar = () => {
               onClick={handleWallet}
             >
               Wallet
-            </Button>
+              </Button>
+              <Link to={"/trader/nft/create"}>
+                <Button
+                  color='inherit'
+                  sx={{
+                    color: 'primary.contrastText',
+                    '&:hover': {
+                      backgroundColor: 'accent.main',
+                      color: 'accent.contrastText'
+                    }
+                  }}
+                >
+                  Add New Product
+                </Button>
+              </Link>
+            </>
           ) : null}
-        <Link to={"/trader/nft/create"}>
+        <Link to={"/nft/list/all"}>
           <Button
             color='inherit'
             sx={{
@@ -114,9 +130,12 @@ const Navbar = () => {
               }
             }}
           >
-            Create NFT
+            Explore
             </Button>
           </Link>
+
+          
+
         </Box>
       </Toolbar>
     </AppBar>

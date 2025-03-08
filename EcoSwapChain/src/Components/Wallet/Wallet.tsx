@@ -295,7 +295,7 @@ const Wallet: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <Slide in direction='up' timeout={500}>
-        <AnimatedCard sx={{ maxWidth: 450, m: 1, minWidth: 300 }}>
+        <AnimatedCard sx={{ maxWidth: 450, m: 1, minWidth: 300, overflow: "scroll" }}>
           <Typography
             variant='h5'
             component="div"

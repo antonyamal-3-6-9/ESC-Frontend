@@ -14,7 +14,7 @@ import ProductGrid from './Components/NFT/listNFT'
 import ProductDetailPage from './Components/NFT/NFTDetails'
 import CreateNFT from './Components/NFT/Create/CreateNFT'
 import NFTCollection from './Components/NFT/Collection/CollectionListing'
-import OrderDetails from './Components/Orders/OrderDetails'
+import NFTOrderDetails from './Components/Orders/OrderDetails'
 import NFTOrderListing from './Components/Orders/OrderList'
 import ProfileCard from './Components/Profile/ProfileCard'
 import LandingPageThree from './Components/LandingPage/L3'
@@ -47,7 +47,7 @@ window.Buffer = buffer.Buffer;
           path='/'
           element={
             <>
-              <OrderDetails />
+              <LandingPageThree />
             </>
           }
         />
@@ -58,9 +58,12 @@ window.Buffer = buffer.Buffer;
 
         <Route path='/trader/nft/create' element={<CreateNFT />} />
         <Route path='/trader/profile' element={<ProfileCard />} />
-        <Route path='/nft/retrieve/:id' element={<ProductDetailPage />} />
 
+        <Route path='/nft/retrieve/:id' element={<ProductDetailPage />} />
         <Route path='/nft/list/all' element={<ProductGrid />} />
+
+        <Route path='/order/retrieve/:id' element={<NFTOrderDetails />} />
+        <Route path='/order/list/all' element={<NFTOrderListing />} />
 
       </Routes>
       <WalletModal/>

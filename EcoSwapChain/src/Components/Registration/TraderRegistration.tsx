@@ -24,6 +24,14 @@ interface Wallet {
   status: boolean;
 }
 
+interface Trader {
+  userName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
 const Register = () => {
 
   const dispatch = useDispatch();
@@ -33,7 +41,8 @@ const Register = () => {
 
   const [keyModalOpen, setKeyModalOpen] = useState(false);
 
-  const [registerData, setRegisterData] = useState({
+  const [registerData, setRegisterData] = useState<Trader>({
+    userName: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -75,6 +84,7 @@ const Register = () => {
       dispatch(setLoading(true));
 
       const registerResponse = await PublicAPI.post(`trader/register/`, {
+        username: registerData.userName,
         first_name: registerData.firstName,
         last_name: registerData.lastName,
         email: registerData.email,
@@ -82,6 +92,7 @@ const Register = () => {
       });
 
       setRegisterData({
+        userName: "",
         firstName: "",
         lastName: "",
         email: "",
@@ -256,6 +267,28 @@ const Register = () => {
                   fullWidth
                   name="lastName"
                   value={registerData.lastName}
+                  onChange={handleChange}
+                  required
+                  slotProps={{
+                    inputLabel: {
+                      style: { color: "#4DA1A9" },
+                    },
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": { borderColor: "#79D7BE" },
+                      "&:hover fieldset": { borderColor: "#4DA1A9" },
+                      "&.Mui-focused fieldset": { borderColor: "#4DA1A9" },
+                    },
+                  }}
+                />
+
+                <TextField
+                  label="User Name"
+                  variant="outlined"
+                  fullWidth
+                  name="userName"
+                  value={registerData.userName}
                   onChange={handleChange}
                   required
                   slotProps={{

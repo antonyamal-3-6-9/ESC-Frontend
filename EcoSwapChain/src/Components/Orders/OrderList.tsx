@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Container,
@@ -9,31 +9,36 @@ import {
   Avatar,
   Tab,
   Fade,
-  Divider,
-  IconButton,
-  Tooltip,
   LinearProgress,
+  Divider,
 } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import {
-  Launch,
   ContentCopy,
   CheckCircle,
   Pending,
   Timeline,
+  ShoppingCart,
+  Sell,
+  FilterList,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import RouteDisplayC from '../RouteDisplay';
+import { API } from '../API/api';
+import { useAppSelector } from '../../store';
+import { Link } from 'react-router';
 
 // Types
 interface Order {
-  id: string;
+  id: number;
+  ownerId: number
   nftName: string;
   nftImage: string;
-  fromAddress: string;
-  toAddress: string;
+  sellerAddress: string;
+  buyerAddress: string;
+  orderType: 'buy' | 'sell';
   status: 'pending' | 'processing' | 'fulfilled';
-  timestamp: string;
-  transactionHash?: string;
+  createdAt: string;
 }
 
 // Styled Components
@@ -73,34 +78,65 @@ const AddressChip = styled(Chip)(({ theme }) => ({
 }));
 
 const StatusChip = styled(Chip)<{ status: string }>(({ theme, status }) => ({
-  backgroundColor: 
-    status === 'fulfilled' 
-      ? theme.palette.accent.main 
+  backgroundColor:
+    status === 'fulfilled'
+      ? theme.palette.accent.main
       : status === 'processing'
-      ? theme.palette.primary.main
-      : theme.palette.secondary.light,
+        ? theme.palette.primary.main
+        : theme.palette.secondary.light,
   color: theme.palette.surface.contrastText,
   '& .MuiChip-icon': {
     color: 'inherit',
   },
 }));
 
+const StatusDivider = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  margin: `${theme.spacing(3)} 0`,
+  '&::before, &::after': {
+    content: '""',
+    flex: 1,
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+}));
+
+const StatusHeader = styled(Typography)(({ theme }) => ({
+  margin: `0 ${theme.spacing(2)}`,
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+}));
+
 const NFTOrderListing: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
 
-  // Sample data - replace with your actual data
-  const orders: Order[] = [
-    {
-      id: '1',
-      nftName: 'Digital Art Collection #1',
-      nftImage: '/api/placeholder/100/100',
-      fromAddress: '0x1234...5678',
-      toAddress: '0x9876...5432',
-      status: 'pending',
-      timestamp: '2025-02-19T10:00:00Z',
-    },
-    // Add more sample orders...
-  ];
+  const userId = useAppSelector((state) => state.user.id);
+  const userRefId = useRef(userId);
+
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await API.get(`/order/list/`);
+      const ordersData = response.data.orders;
+      ordersData.forEach((order: Order) => {
+        if (order.ownerId === userRefId.current) {
+          order.orderType = "sell"
+        } else {
+          order.orderType = "buy"
+        }
+      })
+      setOrders(ordersData);
+      console.log(ordersData);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
@@ -119,7 +155,7 @@ const NFTOrderListing: React.FC = () => {
   };
 
   const renderOrder = (order: Order) => (
-    <Fade in timeout={800}>
+    <Fade in timeout={800} key={order.id}>
       <OrderCard>
         <Stack direction="row" spacing={3} alignItems="center">
           {/* NFT Image */}
@@ -133,9 +169,11 @@ const NFTOrderListing: React.FC = () => {
           {/* Order Details */}
           <Box sx={{ flex: 1 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6" fontWeight="600">
+              <Link to={`/order/retrieve/${order.id}`} style={{ textDecoration: "none"}}> 
+              <Typography variant="h6" fontWeight="600" sx={{ textDecoration: 'none' }}>
                 {order.nftName}
-              </Typography>
+                </Typography>
+              </Link>
               <StatusChip
                 status={order.status}
                 icon={getStatusIcon(order.status)}
@@ -149,8 +187,8 @@ const NFTOrderListing: React.FC = () => {
                   From:
                 </Typography>
                 <AddressChip
-                  label={order.fromAddress}
-                  onDelete={() => handleCopyAddress(order.fromAddress)}
+                  label={order.sellerAddress}
+                  onDelete={() => handleCopyAddress(order.sellerAddress)}
                   deleteIcon={<ContentCopy fontSize="small" />}
                 />
               </Stack>
@@ -160,8 +198,8 @@ const NFTOrderListing: React.FC = () => {
                   To:
                 </Typography>
                 <AddressChip
-                  label={order.toAddress}
-                  onDelete={() => handleCopyAddress(order.toAddress)}
+                  label={order.buyerAddress}
+                  onDelete={() => handleCopyAddress(order.buyerAddress)}
                   deleteIcon={<ContentCopy fontSize="small" />}
                 />
               </Stack>
@@ -187,16 +225,8 @@ const NFTOrderListing: React.FC = () => {
               mt={2}
             >
               <Typography variant="caption" color="text.secondary">
-                {new Date(order.timestamp).toLocaleString()}
+                {new Date(order.createdAt).toLocaleString()}
               </Typography>
-              
-              {order.transactionHash && (
-                <Tooltip title="View Transaction">
-                  <IconButton size="small" color="primary">
-                    <Launch fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
             </Stack>
           </Box>
         </Stack>
@@ -204,47 +234,99 @@ const NFTOrderListing: React.FC = () => {
     </Fade>
   );
 
+  // Group orders by type and status
+  const renderOrdersByTypeAndStatus = (orderType: Order['orderType']) => {
+    const filteredOrders = orders.filter(order => order.orderType === orderType);
+    const statuses: Order['status'][] = ['pending', 'processing', 'fulfilled'];
+
+    return (
+      <Box>
+        {statuses.map((status) => {
+          const statusOrders = filteredOrders.filter(order => order.status === status);
+
+          if (statusOrders.length === 0) return null;
+
+          return (
+            <Box key={`${orderType}-${status}`}>
+              <StatusDivider>
+                <StatusHeader variant="subtitle1" color="text.secondary">
+                  {getStatusIcon(status)}
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </StatusHeader>
+              </StatusDivider>
+
+              {statusOrders.map(order => renderOrder(order))}
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  };
+
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom fontWeight="600">
-        My Orders
-      </Typography>
+
+    
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <RouteDisplayC />
 
       <TabContext value={activeTab}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-          <TabList 
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, mt: 7 }}>
+          <TabList
             onChange={(_, value) => setActiveTab(value)}
             textColor="primary"
             indicatorColor="primary"
           >
-            <Tab label="All Orders" value="all" />
-            <Tab label="Pending" value="pending" />
-            <Tab label="Processing" value="processing" />
-            <Tab label="Fulfilled" value="fulfilled" />
+            <Tab
+              label="All Orders"
+              value="all"
+              icon={<FilterList />}
+              iconPosition="start"
+            />
+            <Tab
+              label="Buy Orders"
+              value="buy"
+              icon={<ShoppingCart />}
+              iconPosition="start"
+            />
+            <Tab
+              label="Sell Orders"
+              value="sell"
+              icon={<Sell />}
+              iconPosition="start"
+            />
           </TabList>
         </Box>
 
         <TabPanel value="all" sx={{ p: 0 }}>
-          {orders.map(order => renderOrder(order))}
+          <Box mb={4}>
+            <StatusDivider>
+              <StatusHeader variant="h6" color="primary">
+                <ShoppingCart fontSize="small" />
+                Buy Orders
+              </StatusHeader>
+            </StatusDivider>
+            {renderOrdersByTypeAndStatus('buy')}
+          </Box>
+
+          <Box>
+            <StatusDivider>
+              <StatusHeader variant="h6" color="primary">
+                <Sell fontSize="small" />
+                Sell Orders
+              </StatusHeader>
+            </StatusDivider>
+            {renderOrdersByTypeAndStatus('sell')}
+          </Box>
         </TabPanel>
 
-        <TabPanel value="pending" sx={{ p: 0 }}>
-          {orders
-            .filter(order => order.status === 'pending')
-            .map(order => renderOrder(order))}
+        <TabPanel value="buy" sx={{ p: 0 }}>
+          {renderOrdersByTypeAndStatus('buy')}
         </TabPanel>
 
-        <TabPanel value="processing" sx={{ p: 0 }}>
-          {orders
-            .filter(order => order.status === 'processing')
-            .map(order => renderOrder(order))}
+        <TabPanel value="sell" sx={{ p: 0 }}>
+          {renderOrdersByTypeAndStatus('sell')}
         </TabPanel>
 
-        <TabPanel value="fulfilled" sx={{ p: 0 }}>
-          {orders
-            .filter(order => order.status === 'fulfilled')
-            .map(order => renderOrder(order))}
-        </TabPanel>
       </TabContext>
     </Container>
   );

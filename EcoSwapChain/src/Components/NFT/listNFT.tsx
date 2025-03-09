@@ -665,7 +665,7 @@ const ProductGrid: React.FC = () => {
 
                             {/* Product Image */}
                             <StyledCardMedia
-                              image={`http://localhost:8000/${product.image}`}
+                              image={`http://localhost:8000${product.image}`}
                               title={product.name}
                             />
 

@@ -41,7 +41,7 @@ export const checkAuth = (): AppThunk => async (dispatch) => {
         });
         
         if (userRes.data.role === userRole) {
-            console.log(userRes.data.first_name)
+            console.log(userRes.data)
             dispatch(setUser(userRes.data));
             dispatch(activateUser(true));
         } else {

@@ -117,6 +117,20 @@ const Navbar = () => {
                   Add New Product
                 </Button>
               </Link>
+              <Link to={"/order/list/all"}>
+                <Button
+                  color='inherit'
+                  sx={{
+                    color: 'primary.contrastText',
+                    '&:hover': {
+                      backgroundColor: 'accent.main',
+                      color: 'accent.contrastText'
+                    }
+                  }}
+                >
+                  My Orders
+                </Button>
+              </Link>
             </>
           ) : null}
         <Link to={"/nft/list/all"}>

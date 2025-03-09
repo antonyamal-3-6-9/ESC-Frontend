@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -10,7 +10,6 @@ import {
   Button,
   List,
   ListItem,
-  ListItemText,
   ListItemAvatar,
   IconButton,
   Radio,
@@ -28,7 +27,6 @@ import {
   Send as SendIcon,
   ContentCopy as ContentCopyIcon,
   LocalShipping as LocalShippingIcon,
-  Person as PersonIcon,
   AccountBalanceWallet as WalletIcon,
   Schedule as ScheduleIcon,
   Update as UpdateIcon,
@@ -38,19 +36,23 @@ import {
   Assignment as AssignmentIcon,
   Link as LinkIcon,
   Image as ImageIcon,
-  ChatBubbleOutline as ChatIcon
+  ChatBubbleOutline as ChatIcon,
 } from '@mui/icons-material';
+import { useParams } from 'react-router';
+import { API } from '../API/api';
+import { useAppSelector } from '../../store';
+import { useRef } from 'react';
+import RouteDisplayC from '../RouteDisplay';
+
 
 // Types for our component
 interface Message {
-  id: string;
-  text: string;
-  sender: 'buyer' | 'seller';
+  message: string;
+  sender: number;
   timestamp: Date;
 }
 
 interface NFTOrderDetailsProps {
-  orderData: {
     orderId: string;
     nftName: string;
     nftSymbol: string;
@@ -68,7 +70,6 @@ interface NFTOrderDetailsProps {
     createdAt: Date;
     updatedAt: Date;
     trackingNumber?: string;
-  };
 }
 
 // Function to truncate Ethereum addresses
@@ -76,51 +77,66 @@ const truncateAddress = (address: string) => {
   return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
 };
 
-const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
+const NFTOrderDetails: React.FC = () => {
   const theme = useTheme();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Hi there! I just purchased your amazing NFT!',
-      sender: 'buyer',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24)
-    },
-    {
-      id: '2',
-      text: 'Thanks for your purchase! Let me know if you have any questions about the shipping.',
-      sender: 'seller',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 23)
-    },
-    {
-      id: '3',
-      text: 'When can I expect the physical item to be shipped?',
-      sender: 'buyer',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5)
-    }
-  ]);
+  const { id } = useParams();
+
+  const userId = useAppSelector((state) => state.user.id);
+  const userIdRef = useRef(userId); // Store latest userId
+
+  // Keep ref updated whenever Redux state changes
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
+
+
+  const [orderData, setOrderData] = useState<NFTOrderDetailsProps>({
+    orderId: "",
+    nftName: "",
+    nftSymbol: "",
+    nftAddress: "",
+    nftUri: "",
+    nftImageUrl: "",
+    sellerAddress: "",
+    sellerName: "",
+    sellerAvatar: "",
+    buyerAddress: "",
+    buyerName: "",
+    buyerAvatar: "",
+    orderStatus: "pending" as const,
+    paymentStatus: "paid" as const,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 12),
+    trackingNumber: "TRK-1Z999AA10123456784"
+  });
+
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const [newMessage, setNewMessage] = useState('');
   const [shippingMethod, setShippingMethod] = useState('swapship');
   const [copied, setCopied] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const message: Message = {
-        id: Date.now().toString(),
-        text: newMessage,
-        sender: 'buyer', // Assuming the user is the buyer
-        timestamp: new Date()
-      };
-      setMessages([...messages, message]);
-      setNewMessage('');
+  const sendMessage = () => {
+    if (socket && newMessage.trim()) {
+      const message = {
+        message: newMessage,
+        sender: userId,
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5)
+      }
+      socket.send(JSON.stringify({
+        message: newMessage,
+        sender: userId,
+      }));
+      setMessages((prev) => [...prev, message]); // Append new messages to state
     }
   };
+
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      sendMessage();
     }
   };
 
@@ -135,10 +151,68 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
     setShippingMethod(event.target.value);
   };
 
-  // Auto-scroll to bottom of messages
+  async function fetchOrder() {
+    try {
+      const response = await API.get(`/order/retrieve/${id}`);
+      console.log(response.data);
+      setOrderData(response.data.order);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function fetchMessages() {
+    try {
+      const response = await API.get(`/order/retrieve/${id}/messages`);
+      console.log(response.data);
+      setMessages(response.data.messages);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    fetchOrder();
+    fetchMessages();
+  }, []);
+  
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+    const socketUrl = `ws://127.0.0.1:8000/ws/chat/${id}/`; // Use wss:// for production
+    const [socket, setSocket] = useState<WebSocket | null>(null);
+
+  useEffect(() => {
+    const newSocket = new WebSocket(socketUrl);
+
+    newSocket.onopen = () => {
+      console.log("✅ WebSocket connected!");
+    };
+
+    newSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("📩 Received:", data, userIdRef.current); // Always latest userId
+
+      if (data.sender !== userIdRef.current) {
+        setMessages((prev) => [...prev, data]); // Append new messages to state
+      }
+    };
+
+    newSocket.onerror = (err) => console.error("❌ WebSocket Error:", err);
+
+    newSocket.onclose = () => {
+      console.log("🔴 WebSocket disconnected");
+    };
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close(); // Cleanup on unmount
+    };
+  }, [socketUrl]); // Reconnect only if `socketUrl` changes
+
+
 
   // Order status color mapping
   const getStatusColor = () => {
@@ -163,6 +237,9 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
   };
 
   return (
+    
+    <>
+      <RouteDisplayC />
     <Card
       component={motion.div}
       initial={{ opacity: 0, y: 20 }}
@@ -170,13 +247,17 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
       transition={{ duration: 0.5 }}
       sx={{
         display: 'flex',
-        minHeight: '80vh',
+       
         overflow: 'hidden',
         border: `1px solid ${theme.palette.divider}`,
-        boxShadow: theme.shadows[2]
+        boxShadow: theme.shadows[2],
+        mt: 12
       }}
-    >
+    > 
       {/* Left Side - NFT Details */}
+      
+        
+      
       <Box
         sx={{
           width: '25%',
@@ -186,6 +267,7 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
           p: 3
         }}
       >
+        
         <Typography
           variant="h5"
           component={motion.div}
@@ -211,7 +293,7 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
         >
           <Box
             component="img"
-            src={orderData.nftImageUrl}
+            src={`http://localhost:8000${orderData.nftImageUrl}`}
             alt={orderData.nftName}
             sx={{
               width: '100%',
@@ -249,7 +331,7 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
         />
 
         <Typography variant="subtitle2" sx={{ mb: 0.5, color: theme.palette.text.secondary, display: 'flex', alignItems: 'center' }}>
-          <LinkIcon fontSize="small" sx={{ mr: 0.5 }} /> Contract Address
+          <LinkIcon fontSize="small" sx={{ mr: 0.5 }} /> NFT Address
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -292,9 +374,9 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
       </Box>
 
       {/* Right Side - Communication and Order Details */}
-      <Box sx={{ width: '75%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ width: '75%', display: 'flex', flexDirection: 'column', height: "75%", overflow: "hidden"}}>
         {/* Chat Section */}
-        <Box sx={{ height: '50%', p: 3, pb: 0 }}>
+        <Box sx={{ height: "500px", p: 3, pb: 0, overflow: "scroll" }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <ChatIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
             <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
@@ -321,58 +403,50 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
               bgcolor: 'rgba(246, 244, 240, 0.5)'
             }}>
               <List>
-                {messages.map((message) => (
+                {messages.map((message, index) => (
                   <Grow
-                    key={message.id}
+                    key={index}
                     in={true}
-                    style={{ transformOrigin: message.sender === 'buyer' ? 'right' : 'left' }}
+                    style={{ transformOrigin: message.sender === userId ? 'right' : 'left' }}
                     timeout={500}
                   >
                     <ListItem
                       sx={{
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: message.sender === 'buyer' ? 'flex-end' : 'flex-start',
+                        alignItems: message.sender === userId ? 'flex-end' : 'flex-start',
                         px: 1
                       }}
                     >
                       <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 0.5 }}>
-                        {message.sender === 'seller' && (
-                          <ListItemAvatar sx={{ minWidth: 40 }}>
-                            <Avatar
-                              src={orderData.sellerAvatar}
-                              sx={{ width: 32, height: 32 }}
-                            />
-                          </ListItemAvatar>
-                        )}
                         <Box
                           sx={{
                             p: 2,
-                            bgcolor: message.sender === 'buyer'
+                            bgcolor: message.sender === userId
                               ? theme.palette.primary.main
                               : theme.palette.background.paper,
-                            color: message.sender === 'buyer'
+                            color: message.sender === userId
                               ? theme.palette.primary.contrastText
                               : theme.palette.text.primary,
                             borderRadius: 2,
                             maxWidth: '70%',
-                            boxShadow: message.sender === 'buyer'
+                            boxShadow: message.sender === userId
                               ? 'none'
                               : theme.shadows[1]
                           }}
                         >
                           <Typography variant="body2">
-                            {message.text}
+                            {message.message}
                           </Typography>
                         </Box>
-                        {message.sender === 'buyer' && (
+
                           <ListItemAvatar sx={{ minWidth: 40 }}>
                             <Avatar
                               src={orderData.buyerAvatar}
                               sx={{ width: 32, height: 32 }}
                             />
                           </ListItemAvatar>
-                        )}
+                    
                       </Box>
                       <Typography
                         variant="caption"
@@ -381,12 +455,11 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
                           color: theme.palette.text.secondary
                         }}
                       >
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {String(message.timestamp)}
                       </Typography>
                     </ListItem>
                   </Grow>
                 ))}
-                <div ref={messagesEndRef} />
               </List>
             </Box>
 
@@ -415,7 +488,7 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={handleSendMessage}
+                onClick={sendMessage}
                 disabled={!newMessage.trim()}
                 sx={{
                   minWidth: 'auto',
@@ -430,7 +503,7 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
         </Box>
 
         {/* Order Details Section */}
-        <Box sx={{ height: '50%', p: 3, pt: 2 }}>
+        <Box sx={{ height: '50%', p: 3, pt: 2, overflow: "auto" }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <AssignmentIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
             <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
@@ -681,31 +754,10 @@ const NFTOrderDetails: React.FC<NFTOrderDetailsProps> = ({ orderData }) => {
           </Box>
         </Box>
       </Box>
-    </Card>
+      </Card>
+    </>
   );
 };
 
 // Example usage with mock data
-export default function NFTOrderDetailsExample() {
-  const mockData = {
-    orderId: "ORD-8475-TXNFT-2025",
-    nftName: "Celestial Harmony #42",
-    nftSymbol: "CLHM",
-    nftAddress: "0x7c5EA222F21711fA42e8D1377e65E853A1e2c717",
-    nftUri: "ipfs://QmT8jMsV5zWjhdHydfE2mLJvvCCuKqNXQvnHEKKzc3dQfZ",
-    nftImageUrl: "https://placehold.co/400",
-    sellerAddress: "0x1b7Ef8578D26CC87AE8FD9f9621fa578Ed92D54C",
-    sellerName: "CryptoCreator",
-    sellerAvatar: "https://placehold.co/100",
-    buyerAddress: "0x9d3A3D87D8f55d7B390912bcaA1D3b12E620778C",
-    buyerName: "DigitalCollector",
-    buyerAvatar: "https://placehold.co/100",
-    orderStatus: "shipped" as const,
-    paymentStatus: "paid" as const,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 12),
-    trackingNumber: "TRK-1Z999AA10123456784"
-  };
-
-  return <NFTOrderDetails orderData={mockData} />;
-}
+export default NFTOrderDetails

@@ -27,6 +27,8 @@ import RouteDisplayC from '../RouteDisplay';
 import { API } from '../API/api';
 import { useAppSelector } from '../../store';
 import { Link } from 'react-router';
+import { setLoading } from '../../Redux/alertBackdropSlice';
+import { useDispatch } from 'react-redux';
 
 // Types
 interface Order {
@@ -111,6 +113,8 @@ const StatusHeader = styled(Typography)(({ theme }) => ({
 const NFTOrderListing: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
 
+  const dispatch = useDispatch()
+
   const userId = useAppSelector((state) => state.user.id);
   const userRefId = useRef(userId);
 
@@ -118,6 +122,7 @@ const NFTOrderListing: React.FC = () => {
 
   const fetchOrders = async () => {
     try {
+      dispatch(setLoading(true))
       const response = await API.get(`/order/list/`);
       const ordersData = response.data.orders;
       ordersData.forEach((order: Order) => {
@@ -131,6 +136,8 @@ const NFTOrderListing: React.FC = () => {
       console.log(ordersData);
     } catch (error) {
       console.log(error);
+    } finally { 
+      dispatch(setLoading(false))
     }
   };
 

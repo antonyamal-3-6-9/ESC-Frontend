@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     Modal,
     Box,
@@ -196,7 +196,12 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
     const dispatch = useDispatch()
 
 
-    const steps = ['Review NFT', 'Confirm Payment', 'Sign Transaction', 'SwapCoin Transfer', 'Mint NFT'];
+    const steps = ['Review NFT', 'Confirm Payment', 'Sign Transaction', 'SwapCoin Transfer', 'Mint NFT', 'Success', 'Transfer Failed', 'Minting Failed'];
+
+    // Add these states to track failure conditions
+    const [transferFailed, setTransferFailed] = useState(false);
+    const [mintingFailed, setMintingFailed] = useState(false);
+
 
     const [userSwapCoinBalance, setUserSwapCoinBalance] = useState<number>(0)
     const [mintingFee, setMintingFee] = useState<number>(20)
@@ -314,6 +319,8 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         try {
             setIsProcessing(true);
             setError(null);
+            setTransferFailed(false);
+            setMintingFailed(false);
 
             // Phase 1: Initiate Fee Transfer (0-25%)
             const responseData = await initiateFeeTransfer();
@@ -323,14 +330,38 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
             setActiveStep(3);
             simulateTransactionProgress();
 
-            const txHash = await decryptAndTransfer(
-                mintingFee,
-                responseData.treasuryKey,
-                responseData.rpcUrl,
-                responseData.mintAddress,
-                password,
-                responseData.encKey
-            );
+            let txHash: string;
+
+            // Perform Transfer
+            try {
+                txHash = await decryptAndTransfer(
+                    mintingFee,
+                    responseData.treasuryKey,
+                    responseData.rpcUrl,
+                    responseData.mintAddress,
+                    password,
+                    responseData.encKey
+                );
+                console.log("Transfer Transaction Hash:", txHash);
+            } catch (transferError) {
+                console.error("Transfer Error:", transferError);
+
+                // Stop execution here, no minting should start if transfer fails
+                dispatch(setAlertMessage(`Transfer failed: ${transferError instanceof Error ? transferError.message : "Unknown error"}`));
+                dispatch(setAlertOn(true));
+                dispatch(setAlertSeverity("error"));
+
+                // Set transfer failed step
+                setTransferFailed(true);
+                setActiveStep(6); // Use step index for Transfer Failed
+
+                // Clear intervals
+                if (txIntervalRef.current) clearInterval(txIntervalRef.current);
+                if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
+
+                setIsProcessing(false);
+                return;
+            }
 
             // Force complete transaction progress
             if (txIntervalRef.current) clearInterval(txIntervalRef.current);
@@ -340,12 +371,36 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
             setActiveStep(4);
             simulateMintingProgress();
 
-            const tx = await mintNFT(txHash);
-            setNftBlkChainData(tx);
+            // Perform Minting
+            try {
+                const tx = await mintNFT(txHash); // Use the txHash from the transfer
+                setNftBlkChainData(tx);
+                console.log("Minting Transaction:", tx);
+            } catch (mintingError) {
+                console.error("Minting Error:", mintingError);
+
+                // Stop execution if minting fails
+                dispatch(setAlertMessage(`Minting failed: ${mintingError instanceof Error ? mintingError.message : "Unknown error"}`));
+                dispatch(setAlertOn(true));
+                dispatch(setAlertSeverity("error"));
+
+                // Set minting failed step
+                setMintingFailed(true);
+                setActiveStep(7); // Use step index for Minting Failed
+
+                // Clear intervals
+                if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
+
+                setIsProcessing(false);
+                return;
+            }
 
             // Force complete minting progress
             if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
             setMintingProgress(100);
+
+            // Set to success step
+            setActiveStep(5);
 
         } catch (err) {
             // Clear all intervals on error
@@ -366,42 +421,33 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
             setIsProcessing(false);
         }
     };
-
-    // Update progress effects
-    useEffect(() => {
-        if (transactionProgress === 100 && activeStep === 3) {
-            setTimeout(() => setActiveStep(4), 500);
-        }
-    }, [transactionProgress, activeStep]);
-
-    useEffect(() => {
-        if (mintingProgress === 100 && activeStep === 4) {
-            setTimeout(() => setActiveStep(5), 500);
-        }
-    }, [mintingProgress, activeStep]);
-
+    // Generate a mock transaction hash for the success screen
 
     const deleteObject = async () => {
         try {
-            await API.delete(`nfts/del/object/${nftData.id}/`)
-        } catch (error) {
+            await API.delete(`nfts/del/object/${nftData.id}/`);
+        } catch (error) { 
             console.log(error)
         }
+
     }
 
-    const handleClose = async () => {
+    const handleClose = () => {
         setActiveStep(0);
         setPassword('');
         setError(null);
+        setIsProcessing(false);
         setTransactionProgress(0);
         setMintingProgress(0);
-        setTransactionHash('');
-        setIsProcessing(false);
-        await deleteObject()
-        onClose();
+        setTransferFailed(false);
+        setMintingFailed(false);
+        setNftBlkChainData({
+            txHash: "",
+            mintAddress: ""
+        })
+        deleteObject()
+        onClose()
     };
-
-    // Generate a mock transaction hash for the success screen
 
     const renderStepContent = () => {
         switch (activeStep) {
@@ -414,7 +460,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                     >
                         <motion.div variants={itemVariants}>
                             <NFTImage>
-                                <img src={`http://localhost:8000/${nftData.imageUrl}`} alt={nftData.name} />
+                                <img src={`http://localhost:8000${nftData.imageUrl}`} alt={nftData.name} />
                                 <GlowBadge>
                                     <TokenIcon fontSize="small" />
                                     Pending
@@ -605,35 +651,11 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                             <Typography variant="body2" color="text.secondary" gutterBottom>
                                 Transaction Progress
                             </Typography>
-                            <LinearProgress
-                                variant="determinate"
-                                value={transactionProgress}
-                                sx={{
-                                    height: 8,
-                                    borderRadius: 1,
-                                    mb: 2,
-                                    '& .MuiLinearProgress-bar': {
-                                        background: (theme) => theme.palette.gradient.secondary
-                                    }
-                                }}
-                            />
+                            <CircularProgress></CircularProgress>
                             <Typography variant="caption" color="text.secondary" align="right" display="block">
-                                {transactionProgress}% Complete
+                                Transaction is in progress
                             </Typography>
                         </motion.div>
-
-                        {transactionProgress === 100 && (
-                            <motion.div
-                                variants={itemVariants}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5 }}
-                            >
-                                <Alert severity="success" sx={{ mt: 2 }}>
-                                    `Transaction Successful! ${transactionHash} Proceeding to NFT minting...``
-                                </Alert>
-                            </motion.div>
-                        )}
                     </motion.div>
                 );
 
@@ -659,7 +681,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                     }}
                                     transition={{ duration: 0.5 }}
                                 >
-                                    <img src={`http://localhost:8000/${nftData.imageUrl}`} alt={nftData.name} />
+                                    <img src={`http://localhost:8000${nftData.imageUrl}`} alt={nftData.name} />
                                 </motion.div>
                                 <GlowBadge>
                                     <TokenIcon fontSize="small" />
@@ -780,7 +802,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                         <motion.div variants={itemVariants}>
                             <Button
                                 component={Link}  // Correct way to use a link
-                                to="/trader/nft/list"
+                                to="/trader/profile"
                                 variant="contained"
                                 color="primary"
                                 onClick={handleClose}
@@ -789,6 +811,174 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                 View My NFTs
                             </Button>
 
+                        </motion.div>
+                    </motion.div>
+                );
+            case 6: // Transfer Failed Step
+                return (
+                    <motion.div
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        style={{ textAlign: 'center' }}
+                    >
+                        <motion.div variants={itemVariants}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    flexDirection: 'column',
+                                    mb: 3
+                                }}
+                            >
+                                <TokenIcon
+                                    sx={{
+                                        fontSize: 80,
+                                        color: 'error.main',
+                                        opacity: 0.8,
+                                        mb: 2
+                                    }}
+                                />
+                                <Typography
+                                    variant="h5"
+                                    fontWeight={700}
+                                    color="error.main"
+                                    gutterBottom
+                                >
+                                    SwapCoin Transfer Failed
+                                </Typography>
+                            </Box>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Typography variant="body1" gutterBottom>
+                                There was an error transferring SwapCoin to the treasury. Your funds have not been deducted.
+                            </Typography>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Alert severity="error" sx={{ my: 3 }}>
+                                Please check your wallet balance and transaction password and try again.
+                            </Alert>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleClose}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => {
+                                        setTransferFailed(false);
+                                        setPassword('');
+                                        setActiveStep(2); // Go back to password step
+                                    }}
+                                >
+                                    Try Again
+                                </Button>
+                            </Box>
+                        </motion.div>
+                    </motion.div>
+                );
+
+            case 7: // Minting Failed Step
+                return (
+                    <motion.div
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        style={{ textAlign: 'center' }}
+                    >
+                        <motion.div variants={itemVariants}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    flexDirection: 'column',
+                                    mb: 3
+                                }}
+                            >
+                                <TokenIcon
+                                    sx={{
+                                        fontSize: 80,
+                                        color: 'warning.main',
+                                        opacity: 0.8,
+                                        mb: 2
+                                    }}
+                                />
+                                <Typography
+                                    variant="h5"
+                                    fontWeight={700}
+                                    color="warning.main"
+                                    gutterBottom
+                                >
+                                    NFT Minting Failed
+                                </Typography>
+                            </Box>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Typography variant="body1" gutterBottom>
+                                SwapCoin transfer was successful, but there was an error minting your NFT on the blockchain.
+                            </Typography>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <TransactionCard>
+                                <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
+                                    <Typography variant="body2" color="text.secondary">Transaction Hash:</Typography>
+                                </Stack>
+                                <Typography
+                                    variant="body2"
+                                    fontWeight={500}
+                                    sx={{
+                                        wordBreak: 'break-all',
+                                        fontFamily: 'monospace',
+                                        bgcolor: 'background.paper',
+                                        p: 1,
+                                        borderRadius: 1,
+                                        border: '1px solid',
+                                        borderColor: 'divider'
+                                    }}
+                                >
+                                    {transactionHash || 'Transaction hash unavailable'}
+                                </Typography>
+                            </TransactionCard>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Alert severity="warning" sx={{ my: 3 }}>
+                                Your SwapCoin has been transferred but the NFT minting failed. Please try again or contact support.
+                            </Alert>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleClose}
+                                >
+                                    Close
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => {
+                                        setMintingFailed(false);
+                                        setPassword('');
+                                        setActiveStep(2); // Go back to password step
+                                    }}
+                                >
+                                    Try Again
+                                </Button>
+                            </Box>
                         </motion.div>
                     </motion.div>
                 );
@@ -817,7 +1007,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                     <IconButton
                         aria-label="close"
                         onClick={handleClose}
-                        disabled={activeStep <= 2}
+                        disabled={activeStep === 2 || activeStep === 3 || activeStep === 4}
                         sx={{
                             position: 'absolute',
                             right: 16,
@@ -829,9 +1019,9 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                         <CloseIcon />
                     </IconButton>
 
-                    {activeStep < 5 && (
+                    {activeStep < 5 && activeStep !== 6 && activeStep !== 7 && (
                         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-                            {steps.map((label, index) => (
+                            {steps.slice(0, 5).map((label, index) => (
                                 <Step key={label}>
                                     <StepLabel>{index < 3 ? label : ''}</StepLabel>
                                 </Step>
@@ -843,16 +1033,18 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                         {renderStepContent()}
                     </Box>
 
-                    {activeStep < 3 && (
+                    {(activeStep < 3 || activeStep === 6 || activeStep === 7) && (
                         <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
-                            <Button
-                                color="inherit"
-                                disabled={activeStep === 0 || isProcessing}
-                                onClick={handleBack}
-                                sx={{ mr: 1 }}
-                            >
-                                Back
-                            </Button>
+                            {activeStep < 3 && (
+                                <Button
+                                    color="inherit"
+                                    disabled={activeStep === 0 || isProcessing}
+                                    onClick={handleBack}
+                                    sx={{ mr: 1 }}
+                                >
+                                    Back
+                                </Button>
+                            )}
                             <Box sx={{ flex: '1 1 auto' }} />
 
                             {activeStep === 2 ? (
@@ -863,6 +1055,19 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                 >
                                     {isProcessing ? 'Processing...' : `Pay ${mintingFee} SwapCoin`}
                                 </SwapCoinButton>
+                            ) : activeStep === 6 || activeStep === 7 ? (
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => {
+                                        setTransferFailed(false);
+                                        setMintingFailed(false);
+                                        setPassword('');
+                                        setActiveStep(2); // Go back to password step
+                                    }}
+                                >
+                                    Try Again
+                                </Button>
                             ) : (
                                 <Button
                                     variant={activeStep === 1 ? "gradient" : "contained"}

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import './App.css'
 import './index.css'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Register from './Components/Registration/TraderRegistration'
 import Login from './Components/Login/Login'
 import { useDispatch } from 'react-redux'
@@ -16,82 +16,48 @@ import NFTOrderDetails from './Components/Orders/OrderDetails'
 import NFTOrderListing from './Components/Orders/OrderList'
 import ProfileCard from './Components/Profile/ProfileCard'
 import LandingPageThree from './Components/LandingPage/L3'
-import NFTOwnershipHistoryModal from './Components/NFT/OwnershipHistory'
+import SwapchainNavbar from './Components/Admin/AdminNavbar'
 
 
+import ShippingHubForm from './Components/Hub/AddNewHub'
 
 import Navbar from './Components/NavBar/Navbar'
 import CollapsibleAlert from './Components/Alert/Alert'
+import RouteDisplayC from './Components/RouteDisplay'
+
+import NFTAdminDashboard from './Components/Admin/Home'
+
+
 
 import * as buffer from "buffer";
 window.Buffer = buffer.Buffer;
 
-interface Transaction {
-  transferedTo: string;
-  transferedFrom: string;
-  transactionHash: string;
-  transactionType: 'mint' | 'transfer';
-  timestamp: number; // Unix timestamp
-  status: 'success' | 'failed';
-}
-
 function App() {
-    const dispatch = useDispatch()
+
+  const dispatch = useDispatch()
+  
+  const [isAdmin, setIsAdmin] = useState(false)
 
     useEffect(() => {
       dispatch(checkAuth() as never)
     }, [dispatch])
   
-  const transactionHistory: Transaction[]= [
-    {
-      transferedTo: "0xabc123def456ghi789jkl",
-      transferedFrom: "0x987zyx654wvu321tsr",
-      transactionHash: "0xabcdef1234567890abcdef1234567890",
-      transactionType: "transfer",
-      timestamp: Date.now() - 1000000, // Current owner (recent transaction)
-      status: "success"
-    },
-    {
-      transferedTo: "0x987zyx654wvu321tsr",
-      transferedFrom: "0x555thx444you333very222much111",
-      transactionHash: "0x0123456789abcdef0123456789abcdef",
-      transactionType: "transfer",
-      timestamp: Date.now() - 5000000000, // Previous owner
-      status: "success"
-    },
-    {
-      transferedTo: "0x555thx444you333very222much111",
-      transferedFrom: "0x000contract000address000",
-      transactionHash: "0xfedcba9876543210fedcba9876543210",
-      transactionType: "mint",
-      timestamp: Date.now() - 10000000000, // Original mint
-      status: "success"
-    }
-  ];
+  const location = useLocation()
 
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  useEffect(() => {
+    setIsAdmin(location.pathname.split('/')[1] === "admin");
+  }, [location.pathname]);
+   
 
   return (
-    <div>
-      <Navbar />
+    <>{isAdmin ? <SwapchainNavbar /> : <Navbar />}
+      <RouteDisplayC />
       <CollapsibleAlert />
       <BackDrop />
-      <NFTOwnershipHistoryModal
-        open={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        transactions={transactionHistory}
-      />
       <Routes>
-
-
-
         <Route
           path='/'
-          element={
-            <>
-              <LandingPageThree />
-            </>
-          }
+          element={<LandingPageThree />}
         />
 
 
@@ -107,10 +73,13 @@ function App() {
         <Route path='/order/retrieve/:id' element={<NFTOrderDetails />} />
         <Route path='/order/list/all' element={<NFTOrderListing />} />
 
+
+        <Route path='/admin/dashboard' element={<NFTAdminDashboard />} />
+
       </Routes>
       <WalletModal/>
       <BackDrop/>
-    </div>
+    </>
   )
 }
 

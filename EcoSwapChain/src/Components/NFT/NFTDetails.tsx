@@ -48,11 +48,24 @@ import { styled } from '@mui/material/styles';
 import { useParams } from 'react-router';
 import { API, PublicAPI } from '../API/api';
 import { motion } from 'framer-motion';
-import RouteDisplayC from '../RouteDisplay';
 import { useAppSelector } from '../../store';
 import { useNavigate } from 'react-router';
+import { useDispatch } from 'react-redux';
+import { setAlertMessage, setAlertOn, setAlertSeverity } from '../../Redux/alertBackdropSlice';
+import NFTOwnershipHistoryModal from './OwnershipHistory';
 
-// Types
+
+
+interface Transaction {
+  transferedTo: string;
+  transferedFrom: string;
+  transactionHash: string;
+  transactionType: 'mint' | 'transfer';
+  timestamp: number; // Unix timestamp
+  status: 'success' | 'failed';
+}
+
+
 interface ProductImage {
   id: number | string;
   url: string;
@@ -104,8 +117,9 @@ interface NFTDetails {
   nftType: string;
   exchange: boolean;
   status: boolean;
-  traderid: number;
+  traderId: number;
   product: Product;
+  ownershipHistory: Transaction[];
 }
 
 // Styled Components
@@ -186,7 +200,12 @@ const ProductDetailPage: React.FC = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
 
+  const dispatch = useDispatch();
+
   const navigate = useNavigate();
+
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
 
   const [nftData, setNFTData] = useState<NFTDetails>({
     id: 0,
@@ -207,7 +226,8 @@ const ProductDetailPage: React.FC = () => {
     nftType: "",
     exchange: false,
     status: false,
-    traderid: 0,
+    traderId: 0,
+    ownershipHistory: [],
     product: {
       id: 0,
       rootCategory: "",
@@ -291,6 +311,12 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const handleCreateOrder = async () => {
+    if (!userData.active) {
+      dispatch(setAlertMessage("You must be logged in to create an order"));
+      dispatch(setAlertOn(true)); 
+      dispatch(setAlertSeverity("error"));
+      return;
+    }
     try {
       const response =await API.post(`/order/create/`, {
         nftId: nftData.id,
@@ -314,8 +340,12 @@ const ProductDetailPage: React.FC = () => {
     }
 
     return (
-      <Container maxWidth="lg" sx={{ py: 4, mt: 8 }}>
-        <RouteDisplayC />
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <NFTOwnershipHistoryModal
+          open={isHistoryModalOpen}
+          onClose={() => setIsHistoryModalOpen(false)}
+          transactions={nftData.ownershipHistory}
+        />
         <Fade in timeout={600}>
           <Grid container spacing={4}>
             {/* Left Column - Images */}
@@ -352,6 +382,9 @@ const ProductDetailPage: React.FC = () => {
                   <Typography variant="h6" color="primary" gutterBottom>
                     NFT Information
                   </Typography>
+                  <Button color='primary' variant='contained' onClick={() => setIsHistoryModalOpen(true)}>
+                    View Ownership History
+                  </Button>
                   <Divider sx={{ mb: 2 }} />
 
                   <List dense>
@@ -533,8 +566,10 @@ const ProductDetailPage: React.FC = () => {
                       <Add />
                     </IconButton>
                   </Stack> */}
+                    
                     <Button
                       variant="contained"
+                      disabled={userData.active && userData.id === nftData.traderId}
                       color="primary"
                       size="large"
                       onClick={handleCreateOrder}
@@ -550,7 +585,7 @@ const ProductDetailPage: React.FC = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      Create Order
+                      {userData.active && userData.id === nftData.traderId ? "You are the owner" : "Create Order"}
                     </Button>
                     {/* <IconButton color="primary" sx={{
                     transition: 'all 0.3s ease',

@@ -16,7 +16,7 @@ const RouteDisplay = styled(Box)(({ theme }) => ({
     backdropFilter: 'blur(10px)',
     backgroundColor: alpha(theme.palette.background.paper, 0.8),
     borderRadius: theme.shape.borderRadius * 2,
-    padding: theme.spacing(1.5, 3),
+    padding: theme.spacing(1.5),
     marginBottom: theme.spacing(3),
     boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
     display: 'flex',

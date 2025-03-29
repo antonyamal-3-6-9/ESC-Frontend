@@ -14,7 +14,9 @@ import {
   IconButton,
   Tooltip,
   Chip,
-  Checkbox
+  Checkbox,
+  Paper,
+  Popover
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -29,16 +31,89 @@ import { PublicAPI } from '../../API/api';
 import { API } from '../../API/api';
 import NFTMintingModal from './NFTMintingModal';
 import { useDispatch } from 'react-redux';
-import { setAlertMessage, setAlertOn, setAlertSeverity } from '../../../Redux/alertBackdropSlice';
+import { setAlertMessage, setAlertOn, setAlertSeverity, setLoading } from '../../../Redux/alertBackdropSlice';
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import CertificationModal from './AddCertification';
-import RouteDisplayC from '../../RouteDisplay';
+
+
 
 
 const materialsList = [
   "wood", "metal", "plastic", "glass", "paper", "fabric", "ceramic", "rubber", "leather", "stone",
   "bamboo", "cotton", "silk", "wool", "linen", "hemp", "jute", "coir", "sisal", "cork"
 ];
+
+interface FieldDescription {
+  description: string;
+  examples: string;
+  importance: string;
+}
+
+const fieldDescriptions: Record<string, FieldDescription> = {
+  // Numeric fields
+  recycledContent: {
+    description: "The percentage of materials used that come from recycled sources.",
+    examples: "Example: iPhone 16 - 35% of aluminum used is recycled.",
+    importance: "Higher percentages indicate more sustainable resource usage."
+  },
+  carbonFootprint: {
+    description: "The total greenhouse gas emissions caused during product lifecycle.",
+    examples: "Example: iPhone 16 - 65 kg CO2e over its entire lifespan.",
+    importance: "Lower values indicate less climate impact."
+  },
+  energyEfficiency: {
+    description: "The amount of energy the product consumes annually during use.",
+    examples: "Example: iPhone 16 - 5 kWh/year with normal charging patterns.",
+    importance: "Lower values indicate better energy efficiency."
+  },
+  durability: {
+    description: "The expected lifespan of the product under normal use conditions.",
+    examples: "Example: iPhone 16 - Designed to last 5-7 years with regular software updates.",
+    importance: "Higher values indicate longer-lasting products and less waste."
+  },
+  repairabilityScore: {
+    description: "A score from 0-10 indicating how easily the product can be repaired.",
+    examples: "Example: iPhone 16 - 6/10 due to modular design but proprietary parts.",
+    importance: "Higher scores indicate products that are easier to repair rather than replace."
+  },
+
+  // Boolean fields
+  recyclability: {
+    description: "Whether the product can be recycled at the end of its life.",
+    examples: "Example: iPhone 16 - Yes, through Apple's trade-in and recycling program.",
+    importance: "Recyclable products help reduce waste going to landfills."
+  },
+  ethicalSourcing: {
+    description: "Whether materials and labor are sourced according to ethical standards.",
+    examples: "Example: iPhone 16 - Uses Fairmined gold and responsibly sourced rare earth elements.",
+    importance: "Ensures workers are treated fairly and paid properly."
+  },
+  crueltyFree: {
+    description: "Whether the product was made without animal testing.",
+    examples: "Example: iPhone 16 - Yes, Apple does not test its products on animals.",
+    importance: "Indicates respect for animal welfare."
+  },
+  plasticFree: {
+    description: "Whether the product contains no plastic materials.",
+    examples: "Example: iPhone 16 - Mostly plastic-free; uses 100% fiber-based packaging.",
+    importance: "Helps reduce plastic pollution and microplastics."
+  },
+  natural: {
+    description: "Whether the product is made primarily from natural rather than synthetic materials.",
+    examples: "Example: iPhone 16 - No, since it contains aluminum, glass, and electronics.",
+    importance: "Natural materials often biodegrade more easily than synthetics."
+  },
+  destructable: {
+    description: "Whether the product can naturally decompose or biodegrade.",
+    examples: "Example: iPhone 16 - No, as it contains non-biodegradable materials.",
+    importance: "Biodegradable products reduce long-term environmental impact."
+  },
+  hazardous: {
+    description: "Whether the product contains hazardous chemicals or materials.",
+    examples: "Example: iPhone 16 - No, Apple has eliminated mercury, PVC, and brominated flame retardants.",
+    importance: "Non-hazardous products are safer for humans and the environment."
+  }
+};
 
 
 
@@ -57,7 +132,6 @@ interface Certification {
 interface ProductData {
   features: Record<string, string>;
   certifications: Certification[];
-  additionalMaterials: string[];
   additionalImages: File[];
   condition: string;
   rootCategory: CategoryData;
@@ -103,7 +177,34 @@ interface Categories {
   main: CategoryData[]
 }
 
+interface ErrorProduct {
+  features?: string;
+  certifications?: string;
+  additionalImages?: string;
+  condition?: string;
+  rootCategory?: string;
+  mainCategory?: string;
+  recycledContent?: string;
+  carbonFootprint?: string;
+  energyEfficiency?: string;
+  durability?: string;
+  repairabilityScore?: string;
+  ethicalSourcing?: string;
+  crueltyFree?: string;
+  plasticFree?: string;
+  natural?: string;
+  destructable?: string;
+  hazardous?: string;
+}
 
+interface NFTError {
+  name ?: string;
+  symbol ?: string;
+  description ?: string;
+  mainImage ?: string;
+  price ?: string;
+  product?: ErrorProduct
+}
 
 
 
@@ -160,7 +261,6 @@ const NFTCreationForm: React.FC = () => {
     product: {
       features: {},
       certifications: [],
-      additionalMaterials: [],
       additionalImages: [],
       condition: '',
       rootCategory: {
@@ -186,14 +286,11 @@ const NFTCreationForm: React.FC = () => {
     }
   });
 
-  
-
   const dispatch = useDispatch();
 
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
 
-    const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
-
-    const handleMaterialChange = (event: React.ChangeEvent<HTMLInputElement>, newMaterials: string[]) => {
+  const handleMaterialChange = (event: React.MouseEvent<HTMLElement>,newMaterials: string[]) => {
       setSelectedMaterials(newMaterials);
     };
   
@@ -211,7 +308,6 @@ const NFTCreationForm: React.FC = () => {
 
   const [imageUrl, setImageUrl] = useState<string>("")
 
-
   async function getCat() {
     try {
       const response = await PublicAPI.get('product/cat/get/all');
@@ -228,21 +324,6 @@ const NFTCreationForm: React.FC = () => {
     getCat()
   }, [])
 
-  const [errors, setErrors] = useState<{
-    name?: string;
-    symbol?: string;
-    description?: string;
-    mainImage?: string;
-    price?: string;
-    product?: {
-      features?: string;
-      additionalImages?: string;
-      material?: string;
-      condition?: string;
-      rootCategory?: string;
-      mainCategory?: string;
-    };
-  }>({});
 
   const featuresRef = useRef<HTMLInputElement>(null);
 
@@ -383,22 +464,6 @@ const NFTCreationForm: React.FC = () => {
     }
   }
 
-  const materialsRef = useRef<HTMLInputElement>(null);
-
-  const addMaterial = () => {
-    if (materialsRef.current?.value) {
-      setFormData((prev) => ({
-        ...prev,
-        product: {
-          ...prev.product,
-          additionalMaterials: [...(prev.product.additionalMaterials || []), materialsRef.current ? materialsRef.current.value.trim() : ''],
-        },
-      }));
-
-      materialsRef.current.value = '';
-    }
-    console.log(formData)
-  };
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const certificationsQueue = useRef<Certification[]>([]); // Queue to track multiple certifications
@@ -443,37 +508,14 @@ const NFTCreationForm: React.FC = () => {
     }));
   };
 
+
+  const [errors, setErrors] = useState<NFTError>({});
+
   const validateForm = () => {
-    const newErrors: Partial<{
-      name: string;
-      symbol: string;
-      description: string;
-      mainImage: string;
-      price: string;
-      product: Partial<{
-        features: string;
-        certifications: string;
-        additionalMaterials: string;
-        additionalImages: string;
-        condition: string;
-        rootCategory: string;
-        mainCategory: string;
-        recycledContent: string;
-        carbonFootprint: string;
-        energyEfficiency: string;
-        durability: string;
-        repairabilityScore: string;
-        ethicalSourcing: string;
-        crueltyFree: string;
-        plasticFree: string;
-        natural: string;
-        destructable: string;
-        hazardous: string;
-      }>;
-    }> = {};
+    const newErrors: typeof errors = {};
 
     // Name validation
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       newErrors.name = "Name is required.";
     } else if (formData.name.trim().length < 3) {
       newErrors.name = "Name must be at least 3 characters.";
@@ -482,14 +524,14 @@ const NFTCreationForm: React.FC = () => {
     }
 
     // Symbol validation
-    if (!formData.symbol.trim()) {
+    if (!formData.symbol?.trim()) {
       newErrors.symbol = "Symbol is required.";
-    } else if (formData.symbol.trim().length < 2 || formData.symbol.trim().length > 5) {
-      newErrors.symbol = "Symbol must be between 2-5 characters.";
+    } else if (formData.symbol.trim().length < 2 || formData.symbol.trim().length > 7) {
+      newErrors.symbol = "Symbol must be between 2-7 characters.";
     }
 
     // Description validation
-    if (!formData.description.trim()) {
+    if (!formData.description?.trim()) {
       newErrors.description = "Description is required.";
     } else if (formData.description.trim().length < 10) {
       newErrors.description = "Description must be at least 10 characters.";
@@ -500,7 +542,7 @@ const NFTCreationForm: React.FC = () => {
       newErrors.mainImage = "Main image is required.";
     } else if (formData.mainImage.size > 5 * 1024 * 1024) {
       newErrors.mainImage = "Image size must be less than 5MB.";
-    } else if (!['image/jpeg', 'image/png'].includes(formData.mainImage.type)) {
+    } else if (!["image/jpeg", "image/png"].includes(formData.mainImage.type)) {
       newErrors.mainImage = "Only JPEG and PNG formats are allowed.";
     }
 
@@ -513,103 +555,100 @@ const NFTCreationForm: React.FC = () => {
       newErrors.price = "Price must be greater than 0.";
     }
 
-    // Initialize product errors object
+    // Initialize product errors
     newErrors.product = {};
 
-    // Product validations
-    // Condition
-    if (!formData.product.condition.trim()) {
+    // Condition validation
+    if (!formData.product?.condition?.trim()) {
       newErrors.product.condition = "Condition is required.";
     }
 
-    // Categories
-    if (formData.product.rootCategory.name.length === 0) {
+    // Categories validation
+    if (!formData.product?.rootCategory?.name?.trim()) {
       newErrors.product.rootCategory = "Root category is required.";
     }
-    if (formData.product.mainCategory.name.length === 0) {
+    if (!formData.product?.mainCategory?.name?.trim()) {
       newErrors.product.mainCategory = "Main category is required.";
     }
 
-    // Features
-    if (Object.keys(formData.product.features).length === 0) {
+    // Features validation
+    if (!formData.product?.features || Object.keys(formData.product.features).length === 0) {
       newErrors.product.features = "At least one feature is required.";
     }
 
-    // Certifications
-    if (formData.product.certifications.length === 0) {
+    // Certifications validation
+    if (!formData.product?.certifications?.length) {
       newErrors.product.certifications = "At least one certification is required.";
     }
 
-    // Additional Materials
-    if (formData.product.additionalMaterials.length === 0) {
-      newErrors.product.additionalMaterials = "At least one material is required.";
-    }
-
-    // Additional Images
-    if (formData.product.additionalImages.length === 0) {
+    // Additional Images validation
+    if (!formData.product?.additionalImages?.length) {
       newErrors.product.additionalImages = "At least one additional image is required.";
     }
 
-    // Recycled Content
-    if (formData.product.recycledContent === null || formData.product.recycledContent === undefined) {
+    // Recycled Content validation
+    if (formData.product?.recycledContent == null) {
       newErrors.product.recycledContent = "Recycled content is required.";
     } else if (formData.product.recycledContent < 0 || formData.product.recycledContent > 100) {
       newErrors.product.recycledContent = "Recycled content must be between 0-100%.";
     }
 
-    // Carbon Footprint
-    if (formData.product.carbonFootprint === null || formData.product.carbonFootprint === undefined) {
+    // Carbon Footprint validation
+    if (formData.product?.carbonFootprint == null) {
       newErrors.product.carbonFootprint = "Carbon footprint is required.";
-    } else if (formData.product.carbonFootprint < 0) {
-      newErrors.product.carbonFootprint = "Carbon footprint must be a positive number.";
+    } else if (formData.product.carbonFootprint < 0 || formData.product.carbonFootprint > 50) {
+      newErrors.product.carbonFootprint = "Carbon footprint must be a positive number less than 50.";
     }
 
-    // Energy Efficiency
-    if (formData.product.energyEfficiency === null || formData.product.energyEfficiency === undefined) {
+    // Energy Efficiency validation
+    if (formData.product?.energyEfficiency == null) {
       newErrors.product.energyEfficiency = "Energy efficiency is required.";
-    } else if (formData.product.energyEfficiency < 0 || formData.product.energyEfficiency > 100) {
-      newErrors.product.energyEfficiency = "Energy efficiency must be between 0-100%.";
+    } else if (formData.product.energyEfficiency < 0 || formData.product.energyEfficiency > 500) {
+      newErrors.product.energyEfficiency = "Energy efficiency must be between 0-500.";
     }
 
-    // Durability
-    if (formData.product.durability === null || formData.product.durability === undefined) {
+    // Durability validation
+    if (formData.product?.durability == null) {
       newErrors.product.durability = "Durability score is required.";
-    } else if (formData.product.durability < 1 || formData.product.durability > 10) {
-      newErrors.product.durability = "Durability must be between 1-10.";
+    } else if (formData.product.durability < 1 || formData.product.durability > 20) {
+      newErrors.product.durability = "Durability must be between 1-20.";
     }
 
-    // Repairability Score
-    if (formData.product.repairabilityScore === null || formData.product.repairabilityScore === undefined) {
+    // Repairability Score validation
+    if (formData.product?.repairabilityScore == null) {
       newErrors.product.repairabilityScore = "Repairability score is required.";
     } else if (formData.product.repairabilityScore < 1 || formData.product.repairabilityScore > 10) {
       newErrors.product.repairabilityScore = "Repairability must be between 1-10.";
     }
 
-    // Sustainability Flags
-    if (!formData.product.ethicalSourcing) newErrors.product.ethicalSourcing = "Ethical sourcing is required.";
-    if (!formData.product.crueltyFree) newErrors.product.crueltyFree = "Cruelty-free certification is required.";
-    if (!formData.product.plasticFree) newErrors.product.plasticFree = "Plastic-free status is required.";
 
     // Cleanup empty product errors
     if (Object.keys(newErrors.product).length === 0) {
       delete newErrors.product;
     }
 
-    console.log(newErrors)
+    // Log errors for debugging
+    console.log(newErrors);
 
+    // Update state
     setErrors(newErrors);
+
+    // Return validation status
     return Object.keys(newErrors).length === 0;
   };
+
 
   const [nftId, setNftId] = useState<number>(0)
   const submitData = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     // Validate form before submission
+    dispatch(setLoading(true))
     if (!validateForm()) {
       dispatch(setAlertOn(true));
       dispatch(setAlertSeverity("warning"));
       dispatch(setAlertMessage("Please correct the highlighted errors before submitting"));
+      dispatch(setLoading(false))
       return;
     }
 
@@ -628,7 +667,6 @@ const NFTCreationForm: React.FC = () => {
         features: formData.product.features,
         certifications: formData.product.certifications,
         materialsUsed: selectedMaterials,
-        additionalMaterials: formData.product.additionalMaterials,
         condition: formData.product.condition,
         rootCategory: formData.product.rootCategory,
         mainCategory: formData.product.mainCategory,
@@ -672,8 +710,8 @@ const NFTCreationForm: React.FC = () => {
           "Content-Type": "multipart/form-data",
         }
       });
-
       if (response.data.NFT) {
+        dispatch(setLoading(false))
         setNftId(response.data.NFT.id);
         setImageUrl(response.data.NFT.mainImage);
         dispatch(setAlertOn(true));
@@ -689,11 +727,26 @@ const NFTCreationForm: React.FC = () => {
       console.error("Submission error:", error);
       dispatch(setAlertOn(true));
       dispatch(setAlertSeverity("error"));
-      dispatch(setAlertMessage("An error occurred during submission"));
+      dispatch(setAlertMessage("An error occurred during submission")); 
     } finally {
       console.log("done")
+      dispatch(setLoading(false))
     }
   };
+
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [currentField, setCurrentField] = useState<string | HTMLElement>("");
+
+  const handleInfoClick = (event: React.MouseEvent<HTMLElement>, fieldName: string) => {
+    setCurrentField(event.currentTarget); 
+    console.log("Field clicked:", fieldName);
+  };
+
+  const handleInfoClose = () => {
+    setAnchorEl(null);
+  };
+
+  const openPop = Boolean(anchorEl);
 
   
 
@@ -719,9 +772,8 @@ const NFTCreationForm: React.FC = () => {
 
       <Fade in timeout={800}>
         <form onSubmit={submitData}>
-          <RouteDisplayC />
           <Card sx={{
-            p: 4, maxWidth: 1200, mx: 'auto', mt: 12
+            p: 4, maxWidth: 1200, mx: 'auto', mt: 5
           }}>
             <Typography variant="h4" gutterBottom fontWeight="600">
               Create New NFT
@@ -995,6 +1047,7 @@ const NFTCreationForm: React.FC = () => {
                   fullWidth
                   label="Condition"
                   name="condition"
+                  type='text'
                   value={formData.product.condition}
                   onChange={handleInputChange}
                   error={!!errors.product?.condition}
@@ -1002,51 +1055,116 @@ const NFTCreationForm: React.FC = () => {
                 />
               </Grid>
   
-                {/* Numeric Fields */}
-                {[
-                  { label: "Recycled Content (%)", name: "recycledContent", type: "number" },
-                  { label: "Carbon Footprint (kg CO2e)", name: "carbonFootprint", type: "number" },
-                  { label: "Energy Efficiency (kWh/year)", name: "energyEfficiency", type: "number" },
-                  { label: "Durability (years)", name: "durability", type: "number" },
-                  { label: "Repairability Score (0-10)", name: "repairabilityScore", type: "number" }
-                ].map((field) => (
-                  <Grid item xs={12} md={4} key={field.name}>
+              {/* Numeric Fields */}
+              {[
+                { label: "Recycled Content (%)", name: "recycledContent", type: "number" },
+                { label: "Carbon Footprint (kg CO2e)", name: "carbonFootprint", type: "number" },
+                { label: "Energy Efficiency (kWh/year)", name: "energyEfficiency", type: "number" },
+                { label: "Durability (years)", name: "durability", type: "number" },
+                { label: "Repairability Score (0-10)", name: "repairabilityScore", type: "number" }
+              ].map((field) => (
+                <Grid item xs={12} md={4} key={field.name}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                     <TextField
                       fullWidth
                       label={field.label}
                       name={field.name}
                       type={field.type}
-                      value={formData.product[field.name as keyof ProductData] || ""}
+                      error={!!errors.product?.[field.name as keyof ErrorProduct]}
+                      helperText={errors.product?.[field.name as keyof ErrorProduct]}
+                      value={formData.product?.[field.name as keyof ProductData] ?? ""}
                       onChange={handleNumericChange}
+                      onFocus={(e: React.FocusEvent<HTMLInputElement>) => handleInfoClick(e, field.name)}
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <Tooltip title="Click for more information">
+                              <IconButton
+                                size="small"
+                                edge="end"
+                                onClick={(e) => handleInfoClick(e, field.name)}
+                              >
+                                <Info fontSize="small" color="primary" />
+                              </IconButton>
+                            </Tooltip>
+                          )
+                        }
+                      }}
                     />
-                  </Grid>
-                ))}
 
-                {/* Boolean Fields */}
-                {[
-                  { label: "Is the product recyclable?", name: "recyclability" },
-                  { label: "Are materials ethically sourced?", name: "ethicalSourcing" },
-                  { label: "Is the product cruelty-free?", name: "crueltyFree" },
-                  { label: "Is the product plastic-free?", name: "plasticFree" },
-                  { label: "Is the product made from natural materials?", name: "natural" },
-                  { label: "Is the product destructible?", name: "destructable" },
-                  { label: "Is the product hazardous?", name: "hazardous" }
-                ].map((field) => (
-                  <Grid item xs={12} md={4} key={field.name}>
+
+                  </Box>
+                </Grid>
+              ))}
+
+              {/* Boolean Fields */}
+              {[
+                { label: "Is the product recyclable?", name: "recyclability" },
+                { label: "Are materials ethically sourced?", name: "ethicalSourcing" },
+                { label: "Is the product cruelty-free?", name: "crueltyFree" },
+                { label: "Is the product plastic-free?", name: "plasticFree" },
+                { label: "Is the product made from natural materials?", name: "natural" },
+                { label: "Is the product biodegradable?", name: "destructable" },
+                { label: "Is the product hazardous?", name: "hazardous" }
+              ].map((field) => (
+                <Grid item xs={12} md={4} key={field.name}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={Boolean(formData.product[field.name as keyof ProductData])}
+                          checked={Boolean(formData.product?.[field.name as keyof ProductData])}
                           onChange={handleBooleanChange}
                           name={field.name}
                         />
                       }
                       label={field.label}
                     />
-                  </Grid>
-                ))}
-            
+                    <Tooltip title="Click for more information">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleInfoClick(e, field.name)}
+                      >
+                        <Info fontSize="small" color="primary" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Grid>
+              ))}
+              {/* Info Popover */}
+              <Popover
+                open={openPop}
+                anchorEl={anchorEl}
+                onClose={handleInfoClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'center',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'center',
+                }}
+              >
+                { currentField && fieldDescriptions[currentField as keyof typeof fieldDescriptions] && (
+                  <Paper sx={{ p: 2, maxWidth: 350 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      {currentField === "destructable" ? "Biodegradable" :
+                        String(currentField).replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
+                    </Typography>
 
+                    <Typography variant="body2" paragraph>
+                      {fieldDescriptions[currentField as keyof typeof fieldDescriptions].description}
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      {fieldDescriptions[currentField as keyof typeof fieldDescriptions].examples}
+                    </Typography>
+
+                    <Typography variant="body2" color="primary" fontStyle="italic">
+                      {fieldDescriptions[currentField as keyof typeof fieldDescriptions].importance}
+                    </Typography>
+                  </Paper>
+                )}
+              </Popover>
 
               <Grid item xs={12}>
                 <TextField
@@ -1089,9 +1207,9 @@ const NFTCreationForm: React.FC = () => {
                   sx={{
                     display: 'grid',
                     gridTemplateColumns: {
-                      xs: 'repeat(2, 1fr)',    // 2 columns on mobile
-                      sm: 'repeat(3, 1fr)',    // 3 columns on tablet
-                      md: 'repeat(10, 1fr)'     // 5 columns on desktop
+                      xs: 'repeat(2, 1fr)',    
+                      sm: 'repeat(3, 1fr)',    
+                      md: 'repeat(10, 1fr)'     
                     },
                     gap: 0,
                     width: '100%'
@@ -1167,53 +1285,8 @@ const NFTCreationForm: React.FC = () => {
                     />
                   ))}
                 </Box>
-
               </Grid>
 
-
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Additional Materials Used
-                  <Tooltip title="Add features in key:value format">
-                    <Info fontSize="small" sx={{ ml: 1 }} />
-                  </Tooltip>
-                </Typography>
-                <Stack direction="row" spacing={2}>
-                  <TextField
-                    fullWidth
-                    inputRef={materialsRef}
-                    placeholder="e.g., Color: Blue"
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={addMaterial}>
-                            <Add />
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-     
-                  />
-                </Stack>
-                <Box sx={{ mt: 2 }}>
-                  {formData.product.additionalMaterials?.map((material, index) => (
-                    <Chip
-                      key={index}
-                      label={material}
-                      onDelete={() => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          product: {
-                            ...prev.product,
-                            additionalMaterials: prev.product.additionalMaterials.filter((_, i) => i !== index),
-                          },
-                        }));
-                      }}
-                      sx={{ m: 0.5 }}
-                    />
-                  ))}
-                </Box>
-              </Grid>
 
               <Grid item xs={12}>
                 <FormControlLabel

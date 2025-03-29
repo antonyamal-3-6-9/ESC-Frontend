@@ -11,12 +11,26 @@ interface OTPModalProps {
 
 const OTPModal: React.FC<OTPModalProps> = ({ open, handleClose, handleSubmit, otp, setOtp }) => {
 
+    const [error, setError] = React.useState<string | null>(null);
+
 
     const handleOtpChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setOtp(event.target.value);
     };
 
+    const validateForm = () => {
+        if (otp.length !== 6) {
+            setError("OTP must be 6 digits");
+            return false
+        }
+        setError(null);
+        return true;
+    };
+
     const handleFormSubmit = () => {
+        if (!validateForm()) {
+            return;
+        }
         handleSubmit(otp);
     };
 
@@ -48,6 +62,8 @@ const OTPModal: React.FC<OTPModalProps> = ({ open, handleClose, handleSubmit, ot
                     type='number'
                     margin="normal"
                     name='otp'
+                    error={!!error}
+                    helperText={error}
                     value={otp}
                     onChange={handleOtpChange}
                 />

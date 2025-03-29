@@ -205,21 +205,6 @@ const SearchBox = styled(Paper)(({ theme }) => ({
   }
 }));
 
-const RouteDisplay = styled(Box)(({ theme }) => ({
-  position: 'sticky',
-  top: theme.spacing(11),
-  zIndex: 10,
-  backdropFilter: 'blur(10px)',
-  backgroundColor: alpha(theme.palette.background.paper, 0.8),
-  borderRadius: theme.shape.borderRadius * 2,
-  padding: theme.spacing(1.5, 3),
-  marginBottom: theme.spacing(3),
-  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  borderLeft: `4px solid ${theme.palette.primary.main}`,
-}));
 
 const FilterButton = styled(Button)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 3,
@@ -375,60 +360,8 @@ const ProductGrid: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 11, pb: 8 }}>
-      {/* Route Display with Breadcrumbs */}
-      <RouteDisplay>
-        <Breadcrumbs
-          separator={<NavigateNext fontSize="small" />}
-          aria-label="breadcrumb"
-        >
-          <Link to="/" style={{
-            display: 'flex',
-            alignItems: 'center',
-            color: theme.palette.text.secondary,
-            textDecoration: 'none'
-          }}>
-            <Home sx={{ mr: 0.5 }} fontSize="small" />
-            Home
-          </Link>
-          {pathSegments.map((segment, index) => {
-            const to = `/${pathSegments.slice(0, index + 1).join('/')}`;
-            const isLast = index === pathSegments.length - 1;
-
-            return isLast ? (
-              <Typography
-                key={to}
-                color="primary"
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontWeight: 600
-                }}
-              >
-                {segment.charAt(0).toUpperCase() + segment.slice(1)}
-              </Typography>
-            ) : (
-              <Button
-                key={to}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: theme.palette.text.secondary,
-                  textDecoration: 'none'
-                }}
-              >
-                {segment.charAt(0).toUpperCase() + segment.slice(1)}
-              </Button>
-            );
-          })}
-        </Breadcrumbs>
-        <Chip
-          label={`${filteredProducts.length} Products`}
-          color="primary"
-          size="small"
-          variant="outlined"
-        />
-      </RouteDisplay>
+    <Container maxWidth="lg" sx={{ pb: 8 }}>
+    
 
       {/* Filter Box */}
       <FilterBox elevation={3}>

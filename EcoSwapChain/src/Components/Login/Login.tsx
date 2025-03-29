@@ -3,7 +3,6 @@ import Grid2 from "@mui/material/Grid2"; // Import Grid2
 import Container from "@mui/material/Container"; // Ensure correct import of Container
 import { Google } from "@mui/icons-material";
 import LImg from "./LImg.jpg"; // Replace with your image path
-import Navbar from "../NavBar/Navbar"; // Navbar component
 import { useState } from "react";
 import { activateUser, setUser } from "../../Redux/userSlice";
 import { setLoading } from "../../Redux/alertBackdropSlice";
@@ -53,7 +52,6 @@ const Login = () => {
 
   return (
     <>
-      <Navbar />
       <BackDrop>
         <CircularProgress color="inherit" />
       </BackDrop>
@@ -64,7 +62,6 @@ const Login = () => {
         sx={{
           minHeight: "100vh",
           backgroundColor: "#F6F4F0", // Light background
-          marginTop: 12,
         }}
       >
         <Typography

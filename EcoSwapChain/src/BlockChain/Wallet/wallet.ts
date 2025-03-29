@@ -104,9 +104,14 @@ export async function createWallet(encKey: string): Promise<Wallet> {
 }
 
 // 🛠 Restore wallet from encrypted private key
-export async function getWallet(encryptedPrivateKey: string, encKey: string): Promise<Keypair> {
-    const secretKey = await decryptPrivateKey(encryptedPrivateKey, encKey);
-    return Keypair.fromSecretKey(secretKey);
+export async function getWallet(encryptedPrivateKey: string, encKey: string): Promise<Keypair | null> {
+    try {
+        const secretKey = await decryptPrivateKey(encryptedPrivateKey, encKey);
+        return Keypair.fromSecretKey(secretKey);
+    } catch (error) {
+        console.error("Error decrypting wallet:", error);
+        return null;
+    }
 }
 
 // 🏦 Check token balance of a wallet

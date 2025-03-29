@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { useAppSelector } from '../../store'
 import { useDispatch } from 'react-redux'
 import { triggerWallet } from '../../Redux/walletSlice'
+import { PublicAPI } from '../API/api'
 
 const Navbar = () => {
   const user = useAppSelector(state => state.user)
@@ -13,9 +14,13 @@ const Navbar = () => {
     dispatch(triggerWallet())
   }
 
+  const handleLogout = () => {
+    PublicAPI.post('auth/logout/', {})
+  }
+
   return (
     <AppBar
-      position='fixed'
+      position='sticky'
       sx={{
         backgroundColor: theme => theme.palette.secondary.main,
         boxShadow: theme => theme.shadows[3],
@@ -147,9 +152,23 @@ const Navbar = () => {
             Explore
             </Button>
           </Link>
-
-          
-
+          {user.active && (
+    
+              <Button
+                color='inherit'
+                sx={{
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    backgroundColor: 'accent.main',
+                    color: 'accent.contrastText'
+                  }
+              }}
+              onClick={handleLogout}
+              >
+                Logout
+              </Button>
+      
+          )}
         </Box>
       </Toolbar>
     </AppBar>

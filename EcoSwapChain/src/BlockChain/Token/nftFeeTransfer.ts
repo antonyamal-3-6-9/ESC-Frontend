@@ -34,20 +34,6 @@ export async function transferToTreasury(
         const treasury: PublicKey = new PublicKey(treasuryPublicKey);
 
         console.log("🔗 Establishing connection to Solana...");
-
-        // Check user's SOL balance
-        const userSOLBalance = await connection.getBalance(userWallet.publicKey);
-        console.log(`💰 User SOL Balance: ${userSOLBalance / 10 ** 9} SOL`);
-
-        // If SOL balance is below 0.000005 SOL, airdrop 0.0005 SOL (only works on Devnet)
-        const minSOLRequired = 5000; // 0.000005 SOL (5,000 lamports)
-        if (userSOLBalance < minSOLRequired) {
-            console.log("⚠️ Low SOL balance detected. Airdropping 0.0005 SOL...");
-            const airdropSignature = await connection.requestAirdrop(userWallet.publicKey, 500_000_00); // 0.0005 SOL
-            await connection.confirmTransaction(airdropSignature, "confirmed");
-            console.log("✅ Airdrop successful!");
-        }
-
         // Get associated token accounts
         const userTokenAccount = await getOrCreateAssociatedTokenAccount(
             connection, userWallet, mint, userWallet.publicKey
@@ -84,6 +70,6 @@ export async function transferToTreasury(
         return txSignature;
     } catch (error) {
         console.error("❌ Error in transferToTreasury:", error);
-        return `Transaction failed: ${error instanceof Error ? error.message : "Unknown error"}`;
+        throw new Error(`Transaction failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
 }

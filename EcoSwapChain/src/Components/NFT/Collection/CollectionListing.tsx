@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import {
-  Favorite,
   SwapHoriz,
   ContentCopy,
   Launch,
@@ -26,6 +25,9 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { API } from '../../API/api';
+import { useDispatch } from 'react-redux';
+import { setAlertMessage, setAlertOn, setAlertSeverity, setLoading } from '../../../Redux/alertBackdropSlice';
+
 
 // Types
 interface NFTAsset {
@@ -108,6 +110,8 @@ const NFTCollection: React.FC = () => {
   const [activeTab, setActiveTab] = useState('1');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const dispatch = useDispatch()
+
   const [nftAssets, setNftAssets] = useState<NFTAsset[]>([  // ✅ Corrected type as an array
     {
       id: '0',
@@ -126,19 +130,35 @@ const NFTCollection: React.FC = () => {
   ]);
 
   const fetchData = async () => {
+    dispatch(setLoading(true))
     try {
       const response = await API.get("nfts/owner/list/")
       setNftAssets(response.data.nfts)
       console.log(response.data.nfts)
       console.log(nftAssets)
+      dispatch(setLoading(false))
     } catch (error) {
       console.log(error)
+      dispatch(setLoading(false))
     }
   }
 
   useEffect(() =>  {
     fetchData();
   }, [])
+  
+  async function handleListNFT(nftId: number) { 
+    dispatch(setLoading(true))
+    try {
+      await API.put(`nfts/activate/${nftId}/`)
+      dispatch(setLoading(false))
+      dispatch(setAlertMessage("✅ NFT successfully listed!"));
+      dispatch(setAlertOn(true))
+      dispatch(setAlertSeverity("success"))
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   const handleCopyURI = (uri: string) => {
     navigator.clipboard.writeText(uri);
@@ -203,14 +223,9 @@ const NFTCollection: React.FC = () => {
                   <Launch />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Add to Favorites">
-                <IconButton size="small" sx={{ color: 'white' }}>
-                  <Favorite />
-                </IconButton>
-              </Tooltip>
 
-                <Tooltip title="Transfer">
-                  <IconButton size="small" sx={{ color: 'white' }}>
+                <Tooltip title="List">
+                  <IconButton size="small" sx={{ color: 'white' }} onClick={() => handleListNFT(Number(nft.id))} > 
                     <SwapHoriz />
                   </IconButton>
                 </Tooltip>

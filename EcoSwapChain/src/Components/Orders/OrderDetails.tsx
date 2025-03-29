@@ -44,9 +44,11 @@ import OrderManagement from './OrderUpdate';
 import HomeIcon from '@mui/icons-material/Home';
 import PersonIcon from '@mui/icons-material/Person';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import { setAlertMessage, setAlertOn, setAlertSeverity, setLoading } from '../../Redux/alertBackdropSlice';
+import { useDispatch } from 'react-redux';
+
 
 
 // Types for our component
@@ -117,6 +119,8 @@ const NFTOrderDetails: React.FC = () => {
 
   const userId = useAppSelector((state) => state.user.id);
   const userIdRef = useRef(userId); // Store latest userId
+
+  const dispatch = useDispatch()
 
   // Keep ref updated whenever Redux state changes
   useEffect(() => {
@@ -211,22 +215,28 @@ const NFTOrderDetails: React.FC = () => {
 
 
   async function fetchOrder() {
+    dispatch(setLoading(true))
     try {
       const response = await API.get(`/order/retrieve/${id}`);
       console.log(response.data);
       setOrderData(response.data.order);
     } catch (error) {
       console.error(error);
+    } finally { 
+      dispatch(setLoading(false))
     }
   }
 
   async function fetchMessages() {
+    dispatch(setLoading(true))
     try {
       const response = await API.get(`/order/retrieve/${id}/messages`);
       console.log(response.data);
       setMessages(response.data.messages);
     } catch (error) {
       console.error(error);
+    } finally { 
+      dispatch(setLoading(false))
     }
   }
 
@@ -303,18 +313,28 @@ const NFTOrderDetails: React.FC = () => {
   };
 
   const updatePrice = async (newPrice: number) => {
+    if (newPrice > Number(orderData.price)) {
+      dispatch(setAlertOn(true))
+      dispatch(setAlertSeverity("warning"))
+      dispatch(setAlertMessage("New price cannot be greater than the current price"))
+      return
+    }
     try {
+      dispatch(setLoading(true))
       await API.put(`/order/update/${orderData.orderId}/price/`, {
         price: newPrice
       });
       setOrderData((prev) => ({ ...prev, price: String(newPrice) }));
     } catch (error) {
       console.error(error);
+    } finally {
+      dispatch(setLoading(false))
     }
   }
 
   const updateAddress = async (address: Address) => {
     try {
+      dispatch(setLoading(true))
       const response = await API.put(`/order/update/${orderData.orderId}/address/`, {
         address: address
       });
@@ -339,6 +359,8 @@ const NFTOrderDetails: React.FC = () => {
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      dispatch(setLoading(false))
     }
   }
 

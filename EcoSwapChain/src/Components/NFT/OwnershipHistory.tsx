@@ -261,7 +261,7 @@ const NFTOwnershipHistoryModal: React.FC<NFTOwnershipHistoryModalProps> = ({
                                                 <Typography variant="body2" sx={{ width: 80 }}>From:</Typography>
                                                 <Tooltip title={tx.transferedFrom}>
                                                     <AddressChip
-                                                        label={isMint ? 'Minting Contract' : shortenAddress(tx.transferedFrom)}
+                                                        label={isMint ? 'Minting Contract' : shortenAddress(String(tx.transferedFrom))}
                                                         onClick={() => copyToClipboard(tx.transferedFrom)}
                                                         onDelete={() => copyToClipboard(tx.transferedFrom)}
                                                         deleteIcon={<ContentCopyIcon fontSize="small" />}

@@ -331,7 +331,7 @@ const LandingPageThree = () => {
                 {/* Hero Section */}
                 <Box
                     sx={{
-                        pt: { xs: 12, md: 20 },
+                        pt: { xs: 12, md: 5 },
                         pb: { xs: 10, md: 16 },
                         background: `url('https://via.placeholder.com/1600x900') no-repeat center center`,
                         backgroundSize: 'cover',

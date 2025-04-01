@@ -16,11 +16,44 @@ import {
     Menu as MenuIcon
 } from 'lucide-react';
 import logo from "../logos/svg/logo-color.svg"
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
+import { useAppSelector } from '../../store'
+import { PublicAPI } from '../API/api';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { activateUser, clearUser } from '../../Redux/userSlice';
+import { setLoading } from '../../Redux/alertBackdropSlice';
 
 const SwapchainNavbar: React.FC = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    const user = useAppSelector(state => state.user)
+
+    const location = useLocation()
+
+    const dispatch = useDispatch()
+
+    const navigate = useNavigate()
+
+    const handleLogout = async () => {
+        dispatch(setLoading(true))
+        try {
+            await PublicAPI.post('auth/logout/', {})
+            localStorage.clear()
+            dispatch(activateUser(false))
+            dispatch(clearUser())
+            navigate("/")
+        } catch (error) {
+            console.log(error)
+            dispatch(setLoading(false))
+        } finally {
+            dispatch(setLoading(false))
+        }
+
+    }
+
 
     return (
         <AppBar
@@ -52,7 +85,7 @@ const SwapchainNavbar: React.FC = () => {
                     <Typography
                         variant="h6"
                         component={Link}
-                        to="/"
+                        to="/admin/dashboard/"
                         sx={{
                             fontWeight: "bold",
                             color: "primary",
@@ -77,30 +110,42 @@ const SwapchainNavbar: React.FC = () => {
                         <MenuIcon />
                     </IconButton>
                 ) : (
+
                     <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button
-                            variant="outlined"
-                            color="secondary"
-                            startIcon={<Package size={18} />}
-                        >
-                            Shipping Hubs
-                        </Button>
+                        {user.active &&
+                                <>
+                                <Link
+                                to={"/admin/hub/manage/"}
+                                >
+                                    <Button
+                                        variant="outlined"
+                                        color="secondary"
+                                        startIcon={<Package size={18} />}
+                                    >
+                                        Shipping Hubs
+                                    </Button>
+                                </Link>
+                          
 
-                        <Button
-                            variant="outlined"
-                            color="secondary"
-                            startIcon={<ShoppingCart size={18} />}
-                        >
-                            Orders
-                        </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="secondary"
+                                    startIcon={<ShoppingCart size={18} />}
+                                >
+                                    Orders
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    startIcon={<LogOut size={18} />}
+                                    onClick={handleLogout}
+                                >
+                                    LogOut
+                                </Button>
+                            </>
+                        }
 
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<LogOut size={18} />}
-                        >
-                            Logout
-                        </Button>
+
                     </Box>
                 )}
             </Toolbar>

@@ -11,9 +11,12 @@ import { useNavigate } from "react-router";
 import { PublicAPI } from "../API/api";
 import CollapsibleAlert from "../Alert/Alert";
 import BackDrop from "../Backdrop/Backdrop";
+import { useParams } from "react-router";
 
 
 const Login = () => {
+
+const { role } = useParams();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -28,7 +31,7 @@ const Login = () => {
     // Add login logic here
     dispatch(setLoading(true));
     try {
-      const loginResponse = await PublicAPI.post("/trader/login/", {
+      const loginResponse = await PublicAPI.post(`/${role}/login/`, {
         email: loginData.email,
         password: loginData.password,
       });
@@ -36,7 +39,11 @@ const Login = () => {
       dispatch(setUser(loginResponse.data.user));
       localStorage.setItem("token", loginResponse.data.token);
       dispatch(setLoading(false));
-      navigate("/");
+      if (role === "admin") {
+        navigate("/admin/dashboard/")
+      } else if (role === "trader") {
+        navigate("/");
+      }
     } catch (error) {
       console.error("Login failed.", error);
       dispatch(setLoading(false));

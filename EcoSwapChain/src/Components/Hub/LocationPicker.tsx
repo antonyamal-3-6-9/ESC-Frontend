@@ -32,7 +32,7 @@ const MapClickHandler = ({ onLocationSelect }: { onLocationSelect?: (lat: number
     return null;
 };
 
-const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initialPosition = [51.505, -0.09] }) => {
+const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initialPosition = [9.955388, 436.244921] }) => {
     const [position, setPosition] = useState<[number, number]>(initialPosition);
     const [hasLocation, setHasLocation] = useState(false);
 

@@ -22,7 +22,7 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setUser: (state, action) => {
-      state.username = `${action.payload.first_name} ${action.payload.last_name}`;
+      state.username = action.payload.username;
       state.role = action.payload.role;
       state.id = action.payload.id
       localStorage.setItem('role', action.payload.role)

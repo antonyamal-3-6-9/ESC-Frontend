@@ -18,6 +18,8 @@ import ProfileCard from './Components/Profile/ProfileCard'
 import LandingPageThree from './Components/LandingPage/L3'
 import SwapchainNavbar from './Components/Admin/AdminNavbar'
 
+import HubManagementDashboard from './Components/Hub/Hub'
+
 
 import ShippingHubForm from './Components/Hub/AddNewHub'
 
@@ -45,7 +47,9 @@ function App() {
   const location = useLocation()
 
   useEffect(() => {
-    setIsAdmin(location.pathname.split('/')[1] === "admin");
+
+      setIsAdmin(location.pathname.split('/')[1] === "admin");
+
   }, [location.pathname]);
    
 
@@ -55,6 +59,7 @@ function App() {
       <CollapsibleAlert />
       <BackDrop />
       <Routes>
+
         <Route
           path='/'
           element={<LandingPageThree />}
@@ -62,10 +67,11 @@ function App() {
 
 
         <Route path='/trader/register' element={<Register />} />
-        <Route path='/trader/login' element={<Login />} />
+        <Route path='/:role/login' element={<Login/>} />
+
 
         <Route path='/trader/nft/create' element={<CreateNFT />} />
-        <Route path='/trader/profile' element={<ProfileCard />} />
+        <Route path='/trader/dashboard' element={<ProfileCard />} />
 
         <Route path='/nft/retrieve/:id' element={<ProductDetailPage />} />
         <Route path='/nft/list/all' element={<ProductGrid />} />
@@ -75,6 +81,8 @@ function App() {
 
 
         <Route path='/admin/dashboard' element={<NFTAdminDashboard />} />
+        <Route path="admin/hub/manage/" element={<HubManagementDashboard />} />
+        <Route path='admin/hub/add/' element={<ShippingHubForm />} />
 
       </Routes>
       <WalletModal/>

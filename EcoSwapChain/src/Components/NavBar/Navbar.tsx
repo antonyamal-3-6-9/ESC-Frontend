@@ -5,18 +5,33 @@ import { useAppSelector } from '../../store'
 import { useDispatch } from 'react-redux'
 import { triggerWallet } from '../../Redux/walletSlice'
 import { PublicAPI } from '../API/api'
+import { activateUser, clearUser } from '../../Redux/userSlice'
+import { useNavigate } from 'react-router'
+
 
 const Navbar = () => {
   const user = useAppSelector(state => state.user)
   const dispatch = useDispatch()
+  const navigate = useNavigate()
 
   const handleWallet = () => {
     dispatch(triggerWallet())
   }
 
-  const handleLogout = () => {
-    PublicAPI.post('auth/logout/', {})
-  }
+
+    const handleLogout = async () => {
+        console.log("got in")
+        try {
+            await PublicAPI.post('auth/logout/', {})
+            localStorage.clear()
+             dispatch(activateUser(false))
+             dispatch(clearUser())
+            navigate("/")
+        } catch (error) {
+            console.log(error)
+        }
+
+    }
 
   return (
     <AppBar
@@ -78,7 +93,7 @@ const Navbar = () => {
             gap: 2 // Modern spacing instead of marginRight
           }}
         >
-          <Link to={user.active ? '/trader/profile' : "/trader/login"}>
+          <Link to={user.active ? `/${user.role}/dashboard` : `/trader/login`}>
             <Button
               color='inherit'
               sx={{

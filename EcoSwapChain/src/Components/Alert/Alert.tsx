@@ -59,6 +59,7 @@ const CollapsibleAlert = () => {
 
   return (
     <Snackbar
+      key = { alertData.alertMessage + alertData.alertSeverity }
       anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       open={alertData.alertOn}
       autoHideDuration={3000}
@@ -93,7 +94,7 @@ const CollapsibleAlert = () => {
         }
       >
         <Grow in={alertData.alertOn} timeout={500}>
-          <span>{alertData.alertMessage}</span>
+          <span style={{color: "black"}} >{alertData.alertMessage}</span>
         </Grow>
       </StyledAlert>
     </Snackbar>

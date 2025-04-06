@@ -1,16 +1,18 @@
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material'
 import Logo from '../logos/svg/logo-color.svg'
-import { Link } from 'react-router'
+import { Link } from 'react-router-dom'
 import { useAppSelector } from '../../store'
 import { useDispatch } from 'react-redux'
 import { triggerWallet } from '../../Redux/walletSlice'
 import { PublicAPI } from '../API/api'
 import { activateUser, clearUser } from '../../Redux/userSlice'
 import { useNavigate } from 'react-router'
+import { setLoading } from '../../Redux/alertBackdropSlice'
+import { useEffect } from 'react'
 
 
 const Navbar = () => {
-  const user = useAppSelector(state => state.user)
+  const user = useAppSelector((state) => state.user)
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
@@ -18,23 +20,34 @@ const Navbar = () => {
     dispatch(triggerWallet())
   }
 
+  useEffect(() => {
+    // Force DOM reflow or rerender side-effect
+    window.dispatchEvent(new Event('resize'));
+  }, [user.active]);
 
-    const handleLogout = async () => {
-        console.log("got in")
-        try {
-            await PublicAPI.post('auth/logout/', {})
-            localStorage.clear()
-             dispatch(activateUser(false))
-             dispatch(clearUser())
-            navigate("/")
-        } catch (error) {
-            console.log(error)
-        }
 
+  const handleLogout = async () => {
+    console.log("got in")
+    try {
+      await PublicAPI.post('auth/logout/', {})
+      localStorage.clear()
+      dispatch(activateUser(false))
+      dispatch(clearUser())
+      navigate("/")
+    } catch (error) {
+      console.log(error)
     }
+
+  }
+
+  const handleCreate = () => {
+    dispatch(setLoading(true))
+    navigate("/trader/nft/create")
+  }
 
   return (
     <AppBar
+      key={user.active ? 'logged-in' : 'logged-out'}
       position='sticky'
       sx={{
         backgroundColor: theme => theme.palette.secondary.main,
@@ -93,37 +106,37 @@ const Navbar = () => {
             gap: 2 // Modern spacing instead of marginRight
           }}
         >
-          <Link to={user.active ? `/${user.role}/dashboard` : `/trader/login`}>
-            <Button
-              color='inherit'
-              sx={{
-                color: 'primary.contrastText',
-                '&:hover': {
-                  backgroundColor: 'accent.main',
-                  color: 'accent.contrastText'
-                }
-              }}
-            >
-              {user.active ? user.username : 'Login'}
-            </Button>
-          </Link>
-
           {user.active ? (
             <>
-            <Button
-              color='inherit'
-              sx={{
-                color: 'primary.contrastText',
-                '&:hover': {
-                  backgroundColor: 'accent.main',
-                  color: 'accent.contrastText'
-                }
-              }}
-              onClick={handleWallet}
-            >
-              Wallet
+              <Button
+                color='inherit'
+                onClick={() => {
+                  navigate(`/${user.role}/dashboard`)
+                }}
+                sx={{
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    backgroundColor: 'accent.main',
+                    color: 'accent.contrastText'
+                  }
+                }}
+              >
+                {user.username}
               </Button>
-              <Link to={"/trader/nft/create"}>
+              <Button
+                color='inherit'
+                sx={{
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    backgroundColor: 'accent.main',
+                    color: 'accent.contrastText'
+                  }
+                }}
+                onClick={handleWallet}
+              >
+                Wallet
+              </Button>
+              <Link to={"/trader/nft/create"} onClick={handleCreate}>
                 <Button
                   color='inherit'
                   sx={{
@@ -151,24 +164,6 @@ const Navbar = () => {
                   My Orders
                 </Button>
               </Link>
-            </>
-          ) : null}
-        <Link to={"/nft/list/all"}>
-          <Button
-            color='inherit'
-            sx={{
-              color: 'primary.contrastText',
-              '&:hover': {
-                backgroundColor: 'accent.main',
-                color: 'accent.contrastText'
-              }
-            }}
-          >
-            Explore
-            </Button>
-          </Link>
-          {user.active && (
-    
               <Button
                 color='inherit'
                 sx={{
@@ -177,13 +172,42 @@ const Navbar = () => {
                     backgroundColor: 'accent.main',
                     color: 'accent.contrastText'
                   }
-              }}
-              onClick={handleLogout}
+                }}
+                onClick={handleLogout}
               >
                 Logout
               </Button>
-      
-          )}
+            </>
+          ) : <Button
+            color='inherit'
+            onClick={() => {
+              navigate(`/trader/login`)
+            }}
+            sx={{
+              color: 'primary.contrastText',
+              '&:hover': {
+                backgroundColor: 'accent.main',
+                color: 'accent.contrastText'
+              }
+            }}
+          >
+            Login
+          </Button>}
+          <Link to={"/nft/list/all"}>
+            <Button
+              color='inherit'
+              sx={{
+                color: 'primary.contrastText',
+                '&:hover': {
+                  backgroundColor: 'accent.main',
+                  color: 'accent.contrastText'
+                }
+              }}
+            >
+              Explore
+            </Button>
+          </Link>
+
         </Box>
       </Toolbar>
     </AppBar>

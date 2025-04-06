@@ -29,6 +29,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard'
 import { Theme } from '@mui/material/styles'
 import { API } from '../API/api'
 import Logo from "../logos/svg/logo-color.svg"
+import { SwapCoinPurchaseButton } from './Payment'
 
 declare module '@mui/material/styles' {
   interface Palette {
@@ -39,7 +40,7 @@ declare module '@mui/material/styles' {
   }
 }
 
-interface Transaction {
+export interface Transaction {
   id?: number
   transaction_hash: string
   amount: number
@@ -127,31 +128,10 @@ const Wallet: React.FC = () => {
   const [walletData, setWalletData] = useState<WalletData>({
     public_key: '',
     balance: 0,
-    sent_transaction: [
-      {
-        id: 0,
-        transaction_hash: "",
-        amount: 0,
-        transfered_to: "",
-        transfered_from: "",
-        status: "",
-        transaction_type: "",
-        time_stamp: "",
-      }
-    ],
-    recieved_transaction: [
-      {
-        id: 0,
-        transaction_hash: "",
-        amount: 0,
-        transfered_to: "",
-        transfered_from: "",
-        status: "",
-        transaction_type: "",
-        time_stamp: "",
-      }
-    ]
+    sent_transaction: [] as Transaction[],
+    recieved_transaction: [] as Transaction[]
   })
+
   const [tabValue, setTabValue] = useState<number>(0);
 
   async function getWalletData() {
@@ -175,7 +155,7 @@ const Wallet: React.FC = () => {
   const [clicked, setClicked] = useState<boolean>(false)
 
   const convertToRs = (swapcoins: number): string =>
-    (swapcoins * 0.1).toFixed(2)
+    (swapcoins * 2).toFixed(2)
   const truncatedKey = `${walletData.public_key.slice(
     0,
     30
@@ -194,6 +174,16 @@ const Wallet: React.FC = () => {
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
+
+  const handlePurchaseComplete = (coinAmount: number, tx: Transaction) => {
+    console.log(Number(walletData.balance), coinAmount)
+    const total = Number(walletData.balance) + coinAmount;
+    setWalletData(prevData => ({
+      ...prevData,
+      balance: total,
+      recieved_transaction: [tx, ...prevData.recieved_transaction]
+    }))
+  }
 
   const getTransactionIcon = (transaction: Transaction) => {
     if (transaction.transaction_type === "REWARD") {
@@ -357,8 +347,8 @@ const Wallet: React.FC = () => {
           </Box>
 
           <Grow in timeout={800}>
+            <Box sx={{display: "flex", gap: 3, justifyContent: "center", mt: 2}}>
             <Button
-              fullWidth
               variant='contained'
               color='primary'
               onClick={handleWithdrawClick}
@@ -370,8 +360,16 @@ const Wallet: React.FC = () => {
                 mb: 3
               }}
             >
-              Withdraw to Solana
+              Withdraw
             </Button>
+              <SwapCoinPurchaseButton
+                buttonName='Deposit'
+                coinConversionRate={2}
+                clicked={clicked}
+                walletAddress={walletData.public_key}
+                onPurchaseComplete={handlePurchaseComplete}
+              />
+            </Box>  
           </Grow>
 
           {/* Transaction History Section */}

@@ -1,11 +1,11 @@
 import { TextField, Button, Typography, Box, CircularProgress } from "@mui/material";
-import Grid2 from "@mui/material/Grid2"; // Import Grid2
-import Container from "@mui/material/Container"; // Ensure correct import of Container
+import Grid2 from "@mui/material/Grid2";
+import Container from "@mui/material/Container";
 import { Google } from "@mui/icons-material";
-import LImg from "./LImg.jpg"; // Replace with your image path
+import LImg from "./LImg.jpg";
 import { useState } from "react";
 import { activateUser, setUser } from "../../Redux/userSlice";
-import { setLoading } from "../../Redux/alertBackdropSlice";
+import { setLoading, setAlertMessage, setAlertOn, setAlertSeverity } from "../../Redux/alertBackdropSlice";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 import { PublicAPI } from "../API/api";
@@ -13,47 +13,113 @@ import CollapsibleAlert from "../Alert/Alert";
 import BackDrop from "../Backdrop/Backdrop";
 import { useParams } from "react-router";
 
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+interface ValidationErrors {
+  email?: string;
+  password?: string;
+}
 
 const Login = () => {
-
-const { role } = useParams();
-
+  const { role } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [loginData, setLoginData] = useState({
+  const [loginData, setLoginData] = useState<LoginData>({
     email: "",
     password: "",
   });
 
-  const handleSubmit =  async (e: React.FormEvent<HTMLFormElement>) => {
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Validate form inputs
+  const validateForm = (): boolean => {
+    const newErrors: ValidationErrors = {};
+    let isValid = true;
+
+    // Email validation
+    if (!loginData.email) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(loginData.email)) {
+      newErrors.email = "Email address is invalid";
+      isValid = false;
+    }
+
+    // Password validation
+    if (!loginData.password) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    } else if (loginData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Add login logic here
+
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     dispatch(setLoading(true));
+
     try {
       const loginResponse = await PublicAPI.post(`/${role}/login/`, {
         email: loginData.email,
         password: loginData.password,
       });
+
       dispatch(activateUser(true));
       dispatch(setUser(loginResponse.data.user));
       localStorage.setItem("token", loginResponse.data.token);
-      dispatch(setLoading(false));
-      if (role === "admin") {
-        navigate("/admin/dashboard/")
-      } else if (role === "trader") {
-        navigate("/");
-      }
+
+      // Show success message
+      dispatch(setAlertOn(true));
+      dispatch(setAlertMessage("Login successful!"));
+      dispatch(setAlertSeverity("success"));
+
+      // Navigate based on role
+      setTimeout(() => {
+        if (role === "admin") {
+          navigate("/admin/dashboard/");
+        } else if (role === "trader") {
+          navigate("/");
+        }
+      }, 500)
+
     } catch (error) {
       console.error("Login failed.", error);
+    } finally {
+      setIsSubmitting(false);
       dispatch(setLoading(false));
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear error when user starts typing
+    if (errors[name as keyof ValidationErrors]) {
+      setErrors({
+        ...errors,
+        [name]: undefined
+      });
+    }
+
     setLoginData({
       ...loginData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
@@ -62,20 +128,20 @@ const { role } = useParams();
       <BackDrop>
         <CircularProgress color="inherit" />
       </BackDrop>
-      <CollapsibleAlert/>
+      <CollapsibleAlert />
       <Container
         maxWidth={"md"}
         disableGutters
         sx={{
           minHeight: "100vh",
-          backgroundColor: "#F6F4F0", // Light background
+          backgroundColor: "#F6F4F0",
         }}
       >
         <Typography
           variant="h4"
           gutterBottom
           sx={{
-            color: "#2E5077", // Title color
+            color: "#2E5077",
             textAlign: "center",
           }}
         >
@@ -83,10 +149,10 @@ const { role } = useParams();
         </Typography>
         <Grid2 container>
           {/* Left Side - Image */}
-          <Grid2 size={7}>
+          <Grid2 size={6}>
             <Box
               sx={{
-                height: "80vh",
+                height: { xs: "40vh", md: "80vh" },
                 backgroundImage: `url("${LImg}")`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
@@ -102,7 +168,7 @@ const { role } = useParams();
           </Grid2>
 
           {/* Right Side - Login Form */}
-          <Grid2 size={5}>
+          <Grid2 size={6}>
             <Box
               sx={{
                 width: "100%",
@@ -133,16 +199,25 @@ const { role } = useParams();
                   name="email"
                   onChange={handleChange}
                   required
+                  error={!!errors.email}
+                  helperText={errors.email}
+                  disabled={isSubmitting}
                   slotProps={{
                     inputLabel: {
-                      style: { color: "#4DA1A9" },
+                      style: { color: errors.email ? "#d32f2f" : "#4DA1A9" },
                     },
                   }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
-                      "& fieldset": { borderColor: "#79D7BE" }, // Border color
-                      "&:hover fieldset": { borderColor: "#4DA1A9" },
-                      "&.Mui-focused fieldset": { borderColor: "#4DA1A9" },
+                      "& fieldset": {
+                        borderColor: errors.email ? "#d32f2f" : "#79D7BE"
+                      },
+                      "&:hover fieldset": {
+                        borderColor: errors.email ? "#d32f2f" : "#4DA1A9"
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: errors.email ? "#d32f2f" : "#4DA1A9"
+                      },
                     },
                   }}
                 />
@@ -154,19 +229,28 @@ const { role } = useParams();
                   variant="outlined"
                   fullWidth
                   value={loginData.password}
-                  name={"password"}
+                  name="password"
                   onChange={handleChange}
                   required
+                  error={!!errors.password}
+                  helperText={errors.password}
+                  disabled={isSubmitting}
                   slotProps={{
                     inputLabel: {
-                      style: { color: "#4DA1A9" },
+                      style: { color: errors.password ? "#d32f2f" : "#4DA1A9" },
                     },
                   }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
-                      "& fieldset": { borderColor: "#79D7BE" }, // Border color
-                      "&:hover fieldset": { borderColor: "#4DA1A9" },
-                      "&.Mui-focused fieldset": { borderColor: "#4DA1A9" },
+                      "& fieldset": {
+                        borderColor: errors.password ? "#d32f2f" : "#79D7BE"
+                      },
+                      "&:hover fieldset": {
+                        borderColor: errors.password ? "#d32f2f" : "#4DA1A9"
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: errors.password ? "#d32f2f" : "#4DA1A9"
+                      },
                     },
                   }}
                 />
@@ -176,6 +260,7 @@ const { role } = useParams();
                   type="submit"
                   variant="contained"
                   fullWidth
+                  disabled={isSubmitting}
                   sx={{
                     backgroundColor: "#2E5077",
                     color: "#F6F4F0",
@@ -184,7 +269,7 @@ const { role } = useParams();
                     },
                   }}
                 >
-                  Login
+                  {isSubmitting ? "Logging in..." : "Login"}
                 </Button>
 
                 {/* Google OAuth Button */}
@@ -192,6 +277,7 @@ const { role } = useParams();
                   variant="outlined"
                   startIcon={<Google />}
                   fullWidth
+                  disabled={isSubmitting}
                   sx={{
                     color: "#2E5077",
                     borderColor: "#79D7BE",

@@ -38,7 +38,6 @@ function App() {
 
   const dispatch = useDispatch()
   
-  const [isAdmin, setIsAdmin] = useState(false)
 
     useEffect(() => {
       dispatch(checkAuth() as never)
@@ -46,15 +45,9 @@ function App() {
   
   const location = useLocation()
 
-  useEffect(() => {
-
-      setIsAdmin(location.pathname.split('/')[1] === "admin");
-
-  }, [location.pathname]);
-   
-
   return (
-    <>{isAdmin ? <SwapchainNavbar /> : <Navbar />}
+    <>{location.pathname.includes("/admin") ? <SwapchainNavbar /> : <Navbar />}
+
       <RouteDisplayC />
       <CollapsibleAlert />
       <BackDrop />
@@ -81,12 +74,11 @@ function App() {
 
 
         <Route path='/admin/dashboard' element={<NFTAdminDashboard />} />
-        <Route path="admin/hub/manage/" element={<HubManagementDashboard />} />
-        <Route path='admin/hub/add/' element={<ShippingHubForm />} />
+        <Route path="/admin/hub/manage/" element={<HubManagementDashboard />} />
+        <Route path='/admin/hub/add/' element={<ShippingHubForm />} />
 
       </Routes>
       <WalletModal/>
-      <BackDrop/>
     </>
   )
 }

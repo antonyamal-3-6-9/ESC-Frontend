@@ -28,6 +28,7 @@ import { motion } from 'framer-motion';
 import ReadOnlyMarkersMap from './HubConnectionMap';
 import { Link } from 'react-router';
 import { API } from '../API/api';
+import { GraphRef } from './HubConnectionMap';
 
 // Define TypeScript interfaces
 interface Hub {
@@ -75,6 +76,8 @@ export default function HubManagementDashboard(): JSX.Element {
         pincode: '110001',
         hubType: 'Distribution'
     }]);
+
+    const graphMapRef = useRef<GraphRef>(null);
 
     const [markers, setMarkers] = useState<Marker[]>([
         {
@@ -177,8 +180,17 @@ export default function HubManagementDashboard(): JSX.Element {
 
     const handleAddMode = () => {
         setAddMode(!addMode);
+        if (!addMode) graphMapRef.current?.clearAddPath();
     };
 
+    const handleDeleteMode = () => {
+        setDeleteMode(!deleteMode);
+        if (deleteMode) graphMapRef.current?.clearDeletePath();
+    };
+
+    const handleOptimization = async () => {
+        await graphMapRef.current?.handleRouteOptimization();
+    }
 
     return (
         <Container maxWidth={"xl"} disableGutters sx={{
@@ -199,17 +211,18 @@ export default function HubManagementDashboard(): JSX.Element {
                             variant='gradient'
                             onClick={handleAddMode}
                         >
-                            Add Route
+                            { addMode ? 'Cancel' : 'Add Route' }
                         </Button>
                         <Button
-                        variant="contained"
+                            variant="contained"
+                            onClick={handleDeleteMode}
                         >
-                            Delete Route
+                            { deleteMode ? 'Cancel' : 'Delete Route' }
                         </Button>
                         <Button
-                       
+                       onClick={handleOptimization}
                         >
-                            Submit
+                            Optimize Path
                         </Button>
                     </Grid>
                     <Grid item xs={12} md={7}>
@@ -222,7 +235,14 @@ export default function HubManagementDashboard(): JSX.Element {
                                     position: 'relative',
                                 }}
                             >
-                                <ReadOnlyMarkersMap nodes={markers} addMode={addMode} deleteMode={deleteMode} />
+                                <ReadOnlyMarkersMap
+                                    nodes={markers}
+                                    addMode={addMode}
+                                    deleteMode={deleteMode}
+                                    setAddMode={setAddMode}
+                                    setDeleteMode={setDeleteMode}
+                                    ref={graphMapRef}
+                                />
                             </Paper>
                         </Zoom>
                     </Grid>

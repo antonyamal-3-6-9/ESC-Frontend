@@ -18,6 +18,7 @@ import {
   Zoom,
   Grid2,
   useTheme,
+  Container,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
@@ -400,22 +401,19 @@ const NFTOrderDetails: React.FC = () => {
 
   return (
 
-    <>
-      <RouteDisplayC />
-      <Card
+    <Container maxWidth="lg" >
+      {/* <Card
         component={motion.div}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         sx={{
-          display: 'flex',
-          justifyContent: "center",
+
           overflow: 'hidden',
           border: `1px solid ${theme.palette.divider}`,
           boxShadow: theme.shadows[2],
-          mt: 12
         }}
-      >
+      > */}
         {/* Left Side - NFT Details */}
 
 
@@ -423,7 +421,7 @@ const NFTOrderDetails: React.FC = () => {
 
 
         {/* Right Side - Communication and Order Details */}
-        <Box sx={{ width: '75%', display: 'flex', flexDirection: 'column', height: "75%", overflow: "hidden" }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: "75%", overflow: "hidden" }}>
 
 
           <Grid2 container>
@@ -917,8 +915,8 @@ const NFTOrderDetails: React.FC = () => {
             </Box>
           </Box>
         </Box>
-      </Card>
-    </>
+      {/* </Card> */}
+    </Container>
   );
 };
 

@@ -107,6 +107,27 @@ const ShippingHubForm: React.FC = () => {
         }
     };
 
+    async function getLocationDetails(lat: number, lon: number): Promise<void> {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=geojson&lat=${lat}&lon=${lon}`;
+
+        console.log(url)
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            console.log(data)
+            console.log(data.features[0].properties.address)
+            setHubData(prev => ({
+                ...prev,
+                pincode: data.features[0].properties.address.postcode || "Pincode not found",
+                district: data.features[0].properties.address?.district || data.features[0].properties.address?.county || data.features[0].properties.address?.city || "District not found",
+                state: data.features[0].properties.address?.state || "State not found",
+            }))
+        } catch (error) {
+            console.error("Error fetching location details:", error);
+        }
+    }
+
 
     // Handle location selection from the map
     const handleLocationSelect = (lat: number, lng: number) => {
@@ -115,6 +136,8 @@ const ShippingHubForm: React.FC = () => {
             latitude: lat.toFixed(6),
             longitude: lng.toFixed(6)
         }));
+
+        getLocationDetails(lat, lng);
 
         if (errors.latitude || errors.longitude) {
             setErrors(prev => ({
@@ -148,6 +171,9 @@ const ShippingHubForm: React.FC = () => {
             onSubmit();
         }
     };
+
+
+
 
     return (
         <Container maxWidth={"xl"} disableGutters sx={{
@@ -248,7 +274,7 @@ const ShippingHubForm: React.FC = () => {
                                         onChange={handleInputChange}
                                         fullWidth
                                         required
-                                        type="number"
+                                        type="text"
                                         error={!!errors.pincode}
                                         helperText={errors.pincode}
 

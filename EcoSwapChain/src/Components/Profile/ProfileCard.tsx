@@ -18,7 +18,6 @@ import {
     VerifiedUser
 } from '@mui/icons-material';
 import NFTCollection from '../NFT/Collection/CollectionListing';
-import RouteDisplayC from '../RouteDisplay';
 
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -138,8 +137,7 @@ export const UserProfile = () => {
     };
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 10, mb: 4 }}>
-            <RouteDisplayC />
+        <Container maxWidth="lg" sx={{  }}>
             <Fade in={true} timeout={800}>
                 <StyledCard>
                     <Grid container spacing={4}>
@@ -240,50 +238,6 @@ export const UserProfile = () => {
 
             <Collapse in={expanded} timeout={700}>
                 <NFTCollection />
-                <Box sx={{ mt: 4 }}>
-                    <Typography variant="h5" gutterBottom fontWeight="medium">
-                        Owned NFTs ({userData.ownedAssets})
-                    </Typography>
-                    <Grid container spacing={3}>
-                        {ownedNFTs.map((nft, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={nft.id}>
-                                <Zoom in={true} style={{ transitionDelay: `${index * 100}ms` }}>
-                                    <NFTCard>
-                                        <Box
-                                            component="img"
-                                            src={nft.imageUrl}
-                                            alt={nft.name}
-                                            sx={{
-                                                width: '100%',
-                                                height: 200,
-                                                objectFit: 'cover',
-                                                borderRadius: 2,
-                                                mb: 2,
-                                            }}
-                                        />
-                                        <Typography variant="h6">{nft.name}</Typography>
-                                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="body2">{nft.collection}</Typography>
-                                            <Chip
-                                                label={nft.rarity}
-                                                size="small"
-                                                color="secondary"
-                                            />
-                                        </Box>
-                                        <Box sx={{ mt: 2 }}>
-                                            <Typography variant="body2">Price: {nft.price}</Typography>
-                                            <Box display="flex" gap={1} mt={1}>
-                                                {nft.attributes.map((attr, i) => (
-                                                    <Chip key={i} label={attr} size="small" variant="outlined" />
-                                                ))}
-                                            </Box>
-                                        </Box>
-                                    </NFTCard>
-                                </Zoom>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
             </Collapse>
         </Container>
     );

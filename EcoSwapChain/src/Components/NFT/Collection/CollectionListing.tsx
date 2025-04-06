@@ -112,22 +112,7 @@ const NFTCollection: React.FC = () => {
 
   const dispatch = useDispatch()
 
-  const [nftAssets, setNftAssets] = useState<NFTAsset[]>([  // ✅ Corrected type as an array
-    {
-      id: '0',
-      name: '',
-      description: '',
-      image: '',
-      uri: '',
-      price: 0,
-      symbol: '',
-      nftType: '',
-      features: {},
-      rootCategory: '',
-      mainCategory: "",
-      condition: '',
-    }
-  ]);
+  const [nftAssets, setNftAssets] = useState<NFTAsset[]>([] as NFTAsset[]);
 
   const fetchData = async () => {
     dispatch(setLoading(true))

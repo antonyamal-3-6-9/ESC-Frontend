@@ -19,7 +19,6 @@ interface TransferData {
 
 /**
  * Decrypts the wallet and transfers tokens to the treasury.
- * 
  * @param amount - Amount of tokens to transfer.
  * @param treasuryPublic - Public key of the treasury wallet.
  * @param rpcUrl - Solana RPC URL.
@@ -28,6 +27,7 @@ interface TransferData {
  * @param encKey - Encrypted private key.
  * @returns Transaction signature or error message.
  */
+
 export async function decryptAndTransfer(
     amount: number,
     treasuryPublic: string,

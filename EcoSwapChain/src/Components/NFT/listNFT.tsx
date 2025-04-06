@@ -28,7 +28,8 @@ import {
   Zoom,
   Breadcrumbs,
   Backdrop,
-  CircularProgress
+  CircularProgress,
+  Grid2
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -162,7 +163,7 @@ const PriceTag = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   position: 'absolute',
-  bottom: 200,
+  top: 5,
   right: 16,
   boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
   zIndex: 2,
@@ -565,37 +566,32 @@ const ProductGrid: React.FC = () => {
                         transition={{ duration: 0.5, delay: index * 0.1 }}
                       >
                         <Zoom in style={{ transitionDelay: `${index * 50}ms` }}>
+                     
                           <ProductCard>
-                            {/* Condition Badge */}
-                            {product.condition && (
-                              <ConditionChip
-                                label={product.condition}
-                                color="success"
-                              />
-                            )}
+                              {/* Condition Badge */}
+                            
+                                {product.condition && (
+                                  <ConditionChip
+                                    label={product.condition}
+                                    color="success"
+                                  />
+                                )}
+
+                                <PriceTag>
+                                  <Sell fontSize="small" />
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                    {product.price} $
+                                  </Typography>
+                                </PriceTag>
+
+                            
+               
 
                             {/* Product Actions */}
-                            <ProductActions className="product-actions">
-                              <Tooltip title="Add to favorites">
-                                <StyledIconButton size="small">
-                                  <Favorite />
-                                </StyledIconButton>
-                              </Tooltip>
-                              <Tooltip title="Add to cart">
-                                <StyledIconButton size="small">
-                                  <ShoppingCart />
-                                </StyledIconButton>
-                              </Tooltip>
-                            </ProductActions>
+             
 
                             {/* Price Tag */}
-                            <PriceTag>
-                              <Sell fontSize="small" />
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                {product.price} $
-                              </Typography>
-                            </PriceTag>
-
+                 
                             {/* Product Image */}
                             <StyledCardMedia
                               image={`http://localhost:8000${product.image}`}
@@ -661,7 +657,9 @@ const ProductGrid: React.FC = () => {
                                 </ViewButton>
                               </Box>
                             </CardContent>
-                          </ProductCard>
+                            </ProductCard>
+                       
+
                         </Zoom>
                       </motion.div>
                     </Grid>

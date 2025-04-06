@@ -50,7 +50,7 @@ import { API, PublicAPI } from '../API/api';
 import { motion } from 'framer-motion';
 import { useAppSelector } from '../../store';
 import { useNavigate } from 'react-router';
-import { useDispatch } from 'react-redux';
+import { appDispatch as dispatch } from '../../store';
 import { setAlertMessage, setAlertOn, setAlertSeverity } from '../../Redux/alertBackdropSlice';
 import NFTOwnershipHistoryModal from './OwnershipHistory';
 
@@ -200,7 +200,6 @@ const ProductDetailPage: React.FC = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
 
-  const dispatch = useDispatch();
 
   const navigate = useNavigate();
 
@@ -311,20 +310,27 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const handleCreateOrder = async () => {
+    setLoading(true)
     if (!userData.active) {
-      dispatch(setAlertMessage("You must be logged in to create an order"));
-      dispatch(setAlertOn(true)); 
-      dispatch(setAlertSeverity("error"));
+      dispatch(setAlertOn(true))
+      setTimeout(() => {
+        dispatch(setAlertMessage("U must be logged in to create an order")); // if you have a separate message setter
+        dispatch(setAlertSeverity("warning")); // if applicable
+        dispatch(setAlertOn(true)); // Step 2: reopen it
+      }, 50); 
+      setLoading(false)
       return;
     }
     try {
-      const response =await API.post(`/order/create/`, {
+      const response = await API.post(`/order/create/`, {
         nftId: nftData.id,
       })
       console.log(response.data)
       navigate(`/order/retrieve/${response.data.orderId}`)
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -385,7 +391,7 @@ const ProductDetailPage: React.FC = () => {
                   <Button color='primary' variant='contained' onClick={() => setIsHistoryModalOpen(true)}>
                     View Ownership History
                   </Button>
-                  <Divider sx={{ mb: 2 }} />
+                  <Divider sx={{ m: 2 }} />
 
                   <List dense>
                     <ListItem>

@@ -16,7 +16,12 @@ import {
   Chip,
   Checkbox,
   Paper,
-  Popover
+  Popover,
+  Select,
+  FormControl, 
+  FormHelperText,
+  InputLabel,
+  SelectChangeEvent
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -35,6 +40,13 @@ import { setAlertMessage, setAlertOn, setAlertSeverity, setLoading } from '../..
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import CertificationModal from './AddCertification';
 
+const conditionOptions = [
+  { value: 'new', label: 'New' },
+  { value: 'like_new', label: 'Like New' },
+  { value: 'used_good', label: 'Used - Good' },
+  { value: 'used_fair', label: 'Used - Fair' },
+  { value: 'for_parts', label: 'For Parts or Not Working' },
+];
 
 
 
@@ -42,6 +54,8 @@ const materialsList = [
   "wood", "metal", "plastic", "glass", "paper", "fabric", "ceramic", "rubber", "leather", "stone",
   "bamboo", "cotton", "silk", "wool", "linen", "hemp", "jute", "coir", "sisal", "cork"
 ];
+
+
 
 interface FieldDescription {
   description: string;
@@ -148,6 +162,7 @@ interface ProductData {
   natural: boolean;
   destructable: boolean;
   hazardous: boolean;
+  owned_from: string
 }
 
 // Types
@@ -195,6 +210,7 @@ interface ErrorProduct {
   natural?: string;
   destructable?: string;
   hazardous?: string;
+  owned_from?: string;
 }
 
 interface NFTError {
@@ -282,7 +298,8 @@ const NFTCreationForm: React.FC = () => {
       plasticFree: false,
       natural: false,
       destructable: false,
-      hazardous: false
+      hazardous: false,
+      owned_from: "",
     }
   });
 
@@ -309,6 +326,7 @@ const NFTCreationForm: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string>("")
 
   async function getCat() {
+    dispatch(setLoading(true))
     try {
       const response = await PublicAPI.get('product/cat/get/all');
       setCategories(response.data);
@@ -316,7 +334,8 @@ const NFTCreationForm: React.FC = () => {
       console.log(categories)
     } catch (error) {
       console.log(error)
-
+    } finally {
+      dispatch(setLoading(false))
     }
   }
 
@@ -408,6 +427,26 @@ const NFTCreationForm: React.FC = () => {
       }
     }));
   };
+  const handleOwnedChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      product: {
+        ...prev.product,
+        [name]: value
+      }
+    }));
+  };
+
+  const handleConditionChange = (event: SelectChangeEvent<string>) => { 
+    setFormData((prev) => ({
+      ...prev,
+      product: {
+        ...prev.product,
+        condition: event.target.value
+      }
+    }));
+  }
 
 
   const handleMainImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -619,7 +658,52 @@ const NFTCreationForm: React.FC = () => {
       newErrors.product.repairabilityScore = "Repairability score is required.";
     } else if (formData.product.repairabilityScore < 1 || formData.product.repairabilityScore > 10) {
       newErrors.product.repairabilityScore = "Repairability must be between 1-10.";
+    } 
+
+
+    const ownedFromStr: string = formData.product.owned_from as string;
+
+
+    if (!ownedFromStr) {
+      newErrors.product.owned_from = "Please enter a valid date.";
+    } else {
+      const ownedFromDate = new Date(ownedFromStr);
+      const today = new Date();
+
+      // Clear time portion for accurate comparison (00:00:00)
+      ownedFromDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      if (ownedFromDate >= today) {
+        newErrors.product.owned_from = "Owned from date must be in the past.";
+      } else {
+        console.log("Date is valid, continue with submission.");
+      }
     }
+
+    if (!newErrors.product?.owned_from && formData.product?.condition) {
+      const condition = formData.product.condition.toLowerCase();
+      const ownedFromDate = new Date(ownedFromStr);
+      const today = new Date();
+      const diffInMonths = (today.getFullYear() - ownedFromDate.getFullYear()) * 12 + today.getMonth() - ownedFromDate.getMonth();
+
+      console.log(formData.product.condition)
+
+      const allowedConditions =
+        diffInMonths <= 1
+          ? ["new", "used_fair", "for_parts", "used_good", "like_new"]
+          : diffInMonths <= 6
+            ? ["used_good", "like_new", "used_fair", "for_parts"]
+            : diffInMonths <= 15
+              ? ["used_good", "used_fair", "for_parts"]
+              : ["used_good", "for_parts", "used_fair"];
+
+      if (!allowedConditions.includes(condition)) {
+        newErrors.product.condition = `Condition "${condition}" is not valid for a product owned for ${diffInMonths} month(s). Allowed: ${allowedConditions.join(", ")}`;
+      }
+    }
+
+
 
 
     // Cleanup empty product errors
@@ -681,7 +765,8 @@ const NFTCreationForm: React.FC = () => {
         plasticFree: formData.product.plasticFree,
         natural: formData.product.natural,
         destructable: formData.product.destructable,
-        hazardous: formData.product.hazardous
+        hazardous: formData.product.hazardous,
+        owned_from: formData.product.owned_from,
       };
 
       // Stringify product data with numeric conversion
@@ -738,8 +823,12 @@ const NFTCreationForm: React.FC = () => {
   const [currentField, setCurrentField] = useState<string | HTMLElement>("");
 
   const handleInfoClick = (event: React.MouseEvent<HTMLElement>, fieldName: string) => {
-    setCurrentField(event.currentTarget); 
-    console.log("Field clicked:", fieldName);
+    dispatch(setAlertOn(false))
+    setTimeout(() => {
+      dispatch(setAlertOn(true));
+      dispatch(setAlertMessage(fieldDescriptions[fieldName].description));
+      dispatch(setAlertSeverity("info"));
+    }, 500)
   };
 
   const handleInfoClose = () => {
@@ -1045,14 +1134,40 @@ const NFTCreationForm: React.FC = () => {
               <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
-                  label="Condition"
-                  name="condition"
-                  type='text'
-                  value={formData.product.condition}
-                  onChange={handleInputChange}
-                  error={!!errors.product?.condition}
-                  helperText={errors.product?.condition}
+                  label="Owned From"
+                  name="owned_from"
+                  type="date"
+                  value={formData.product.owned_from}
+                  onChange={handleOwnedChange}
+                  error={!!errors.price}
+                  helperText={errors.price}
+
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">$</InputAdornment>
+                    ),
+                  }}
                 />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth error={!!errors.product?.condition}>
+                  <InputLabel id="condition-label">Condition</InputLabel>
+                  <Select
+                    labelId="condition-label"
+                    name="condition"
+                    value={formData.product.condition || ''}
+                    onChange={handleConditionChange}
+                    label="Condition"
+                  >
+                    {conditionOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>{errors.product?.condition}</FormHelperText>
+                </FormControl>
               </Grid>
   
               {/* Numeric Fields */}
@@ -1074,7 +1189,6 @@ const NFTCreationForm: React.FC = () => {
                       helperText={errors.product?.[field.name as keyof ErrorProduct]}
                       value={formData.product?.[field.name as keyof ProductData] ?? ""}
                       onChange={handleNumericChange}
-                      onFocus={(e: React.FocusEvent<HTMLInputElement>) => handleInfoClick(e, field.name)}
                       slotProps={{
                         input: {
                           endAdornment: (

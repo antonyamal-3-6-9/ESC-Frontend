@@ -15,7 +15,6 @@ import {
     Divider,
     CircularProgress,
     Alert,
-    LinearProgress
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
@@ -204,7 +203,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
 
 
     const [userSwapCoinBalance, setUserSwapCoinBalance] = useState<number>(0)
-    const [mintingFee, setMintingFee] = useState<number>(20)
+    const [mintingFee] = useState<number>(20)
     const [insufficientBalance, setInsufficientBalance] = useState<boolean>(true)
     
     const fetchBalance = async () => {
@@ -620,7 +619,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                             </motion.div>
 
                             <Typography variant="body2" sx={{ mb: 2 }}>
-                                Transferring {nftData.swapCoinCost} SwapCoin to Treasury
+                                Transferring {mintingFee} SwapCoin to Treasury
                             </Typography>
                         </motion.div>
 
@@ -641,7 +640,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                 <Stack direction="row" justifyContent="space-between">
                                     <Typography variant="body2" color="text.secondary">Amount:</Typography>
                                     <Typography variant="body2" fontWeight={600} color="primary.dark">
-                                        {nftData.swapCoinCost} SWC
+                                        {mintingFee} SWC
                                     </Typography>
                                 </Stack>
                             </TransactionCard>
@@ -700,44 +699,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                             <Typography variant="body2" color="text.secondary" gutterBottom>
                                 Minting Progress
                             </Typography>
-                            <LinearProgress
-                                variant="determinate"
-                                value={mintingProgress}
-                                sx={{
-                                    height: 8,
-                                    borderRadius: 1,
-                                    mb: 2,
-                                    '& .MuiLinearProgress-bar': {
-                                        background: (theme) => theme.palette.gradient.primary
-                                    }
-                                }}
-                            />
-                            <Typography variant="caption" color="text.secondary" align="right" display="block">
-                                {mintingProgress}% Complete
-                            </Typography>
-                        </motion.div>
-
-                        <motion.div variants={itemVariants}>
-                            <TransactionCard>
-                                <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-                                    <Typography variant="body2" color="text.secondary">Transaction Hash:</Typography>
-                                </Stack>
-                                <Typography
-                                    variant="body2"
-                                    fontWeight={500}
-                                    sx={{
-                                        wordBreak: 'break-all',
-                                        fontFamily: 'monospace',
-                                        bgcolor: 'background.paper',
-                                        p: 1,
-                                        borderRadius: 1,
-                                        border: '1px solid',
-                                        borderColor: 'divider'
-                                    }}
-                                >
-                                    {nftBlkChainData.txHash}
-                                </Typography>
-                            </TransactionCard>
+                            <CircularProgress></CircularProgress>
                         </motion.div>
 
                         {mintingProgress === 100 && (
@@ -802,10 +764,9 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                         <motion.div variants={itemVariants}>
                             <Button
                                 component={Link}  // Correct way to use a link
-                                to="/trader/profile"
+                                to="/trader/dashboard"
                                 variant="contained"
                                 color="primary"
-                                onClick={handleClose}
                                 sx={{ px: 4 }}
                             >
                                 View My NFTs

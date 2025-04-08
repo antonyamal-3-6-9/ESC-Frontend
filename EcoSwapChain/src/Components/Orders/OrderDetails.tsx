@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
   Typography,
   Avatar,
   Chip,
@@ -40,7 +39,7 @@ import { useParams } from 'react-router';
 import { API } from '../API/api';
 import { useAppSelector } from '../../store';
 import { useRef } from 'react';
-import RouteDisplayC from '../RouteDisplay';
+import { Hub } from '../Hub/Hub';
 import OrderManagement from './OrderUpdate';
 import HomeIcon from '@mui/icons-material/Home';
 import PersonIcon from '@mui/icons-material/Person';
@@ -49,6 +48,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { setAlertMessage, setAlertOn, setAlertSeverity, setLoading } from '../../Redux/alertBackdropSlice';
 import { useDispatch } from 'react-redux';
+import Payment from './OrderPayment';
 
 
 
@@ -76,6 +76,8 @@ interface ShippingDetails {
   isBuyerConfirmed: boolean;
   trackingNumber: string;
   shippingMethod: string;
+  sourceHub: Hub;
+  destinationHub: Hub;
 }
 
 
@@ -101,7 +103,7 @@ interface NFTOrderDetailsProps {
   | 'out-for-delivery'
   | 'delivered'
   | 'cancelled';
-  paymentStatus: 'paid' | 'processing' | 'failed';
+  paymentStatus: 'unpaid' | 'paid' | 'processing' | 'failed';
   createdAt: Date;
   updatedAt: Date;
   ownerId: number;
@@ -170,6 +172,8 @@ const NFTOrderDetails: React.FC = () => {
       isBuyerConfirmed: false,
       trackingNumber: "TRK-1Z999AA10123456784",
       shippingMethod: "FedEx",
+      sourceHub: {} as Hub,
+      destinationHub: {} as Hub,
     },
   });
 
@@ -223,7 +227,7 @@ const NFTOrderDetails: React.FC = () => {
       setOrderData(response.data.order);
     } catch (error) {
       console.error(error);
-    } finally { 
+    } finally {
       dispatch(setLoading(false))
     }
   }
@@ -236,7 +240,7 @@ const NFTOrderDetails: React.FC = () => {
       setMessages(response.data.messages);
     } catch (error) {
       console.error(error);
-    } finally { 
+    } finally {
       dispatch(setLoading(false))
     }
   }
@@ -253,11 +257,75 @@ const NFTOrderDetails: React.FC = () => {
     }
   }, [messages]);
 
-  const socketUrl = `ws://127.0.0.1:8000/ws/chat/${id}/`; // Use wss:// for production
+  const socketChatUrl = `ws://127.0.0.1:8000/ws/chat/${id}/`;
+  const socketUpdateUrl = `ws://127.0.0.1:8000/ws/updates/${id}/`
+
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [updateSocket, setUpdateSocket] = useState<WebSocket | null>(null)
 
   useEffect(() => {
-    const newSocket = new WebSocket(socketUrl);
+    const newSocket = new WebSocket(socketUpdateUrl);
+
+    newSocket.onopen = () => {
+      console.log("✅ Update Socket Connected");
+    };
+
+    newSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "update_price") {
+        setOrderData((prev) => ({
+          ...prev,
+          price: data.updated_price,
+        }));
+      } else if (data.type === "buyer_confirmation") {
+        setOrderData((prev) => ({
+          ...prev,
+          shippingDetails: {
+            ...prev.shippingDetails,
+            isBuyerConfirmed: true,
+          },
+        }));
+      } else if (data.type === "seller_confirmation") {
+        setOrderData((prev) => ({
+          ...prev,
+          orderStatus: "confirmed",
+          shippingDetails: {
+            ...prev.shippingDetails,
+            isSellerConfirmed: true,
+          },
+        }));
+      } else if (data.type === "order_confirmation") {
+        setOrderData((prev) => ({
+          ...prev,
+          shippingDetails: {
+            ...prev.shippingDetails,
+            shippingMethod: data.shipping_method === "self" ? "self" : "swap",
+            sourceHub: data.shipping_method === "swap" ? data.source_hub : null,
+            destinationHub: data.shipping_method === "swap" ? data.destination_hub : null,
+          },
+        }));
+      }
+    };
+
+    newSocket.onerror = (err) => {
+      console.error("❌ WebSocket Error:", err);
+    };
+
+    newSocket.onclose = () => {
+      console.log("🔴 WebSocket disconnected");
+    };
+
+    setUpdateSocket(newSocket);
+
+    return () => {
+      newSocket.close(); // Cleanup on unmount
+    };
+  }, [socketUpdateUrl]);
+
+
+  useEffect(() => {
+    const newSocket = new WebSocket(socketChatUrl);
 
     newSocket.onopen = () => {
       console.log("✅ WebSocket connected!");
@@ -283,7 +351,7 @@ const NFTOrderDetails: React.FC = () => {
     return () => {
       newSocket.close(); // Cleanup on unmount
     };
-  }, [socketUrl]); // Reconnect only if `socketUrl` changes
+  }, [socketChatUrl]); // Reconnect only if `socketUrl` changes
 
 
 
@@ -333,35 +401,11 @@ const NFTOrderDetails: React.FC = () => {
     }
   }
 
-  const updateAddress = async (address: Address) => {
+  const confirmOrder = async () => {
     try {
-      dispatch(setLoading(true))
-      const response = await API.put(`/order/update/${orderData.orderId}/address/`, {
-        address: address
-      });
-      if (userId === orderData.ownerId) {
-        setOrderData((prev) => ({
-          ...prev, shippingDetails: {
-            ...prev.shippingDetails,
-            seller_address: address,
-            trackingNumber: response.data.trackingNumber,
-            shippingMethod: response.data.shippingMethod,
-            isSellerConfirmed: true,
-          }
-        }));
-      } else {
-        setOrderData((prev) => ({
-          ...prev, shippingDetails: {
-            ...prev.shippingDetails,
-            buyer_address: address,
-            isBuyerConfirmed: true
-          }
-        }));
-      }
+      await API.put(`order/confirm/${orderData.orderId}/`)
     } catch (error) {
-      console.error(error);
-    } finally {
-      dispatch(setLoading(false))
+      console.log(error)
     }
   }
 
@@ -414,308 +458,308 @@ const NFTOrderDetails: React.FC = () => {
           boxShadow: theme.shadows[2],
         }}
       > */}
-        {/* Left Side - NFT Details */}
+      {/* Left Side - NFT Details */}
 
 
 
 
 
-        {/* Right Side - Communication and Order Details */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: "75%", overflow: "hidden" }}>
+      {/* Right Side - Communication and Order Details */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: "75%", overflow: "hidden" }}>
 
 
-          <Grid2 container>
-            <Grid2 size={5}>
-
-              <Box
-                sx={{
-                  borderRight: `1px solid ${theme.palette.divider}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  p: 3
-                }}
-              >
-
-                <Typography
-                  variant="h5"
-                  component={motion.div}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  sx={{ mb: 2, fontWeight: 'bold' }}
-                >
-                  NFT Details
-                </Typography>
-
-                <Box
-                  component={motion.div}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-                  sx={{
-                    position: 'relative',
-                    mb: 2,
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    boxShadow: theme.shadows[1]
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={`http://localhost:8000${orderData.nftImageUrl}`}
-                    alt={orderData.nftName}
-                    sx={{
-                      width: '100%',
-                      height: 220,
-                      objectFit: 'cover',
-                      backgroundColor: 'rgba(0,0,0,0.04)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  />
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      bgcolor: 'rgba(255,255,255,0.8)',
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
-                    }}
-                  >
-                    <ImageIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  {orderData.nftName}
-                </Typography>
-
-                <Chip
-                  label={orderData.nftSymbol}
-                  size="small"
-                  color="primary"
-                  sx={{ alignSelf: 'flex-start', mb: 2 }}
-                />
-
-                <Typography variant="subtitle2" sx={{ mb: 0.5, color: theme.palette.text.secondary, display: 'flex', alignItems: 'center' }}>
-                  <LinkIcon fontSize="small" sx={{ mr: 0.5 }} /> NFT Address
-                </Typography>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="body2" sx={{ mr: 1, fontFamily: 'monospace' }}>
-                    {truncateAddress(orderData.nftAddress)}
-                  </Typography>
-                  <Tooltip
-                    title={copied === 'address' ? 'Copied!' : 'Copy Address'}
-                    TransitionComponent={Zoom}
-                  >
-                    <IconButton
-                      size="small"
-                      onClick={() => handleCopy(orderData.nftAddress, 'address')}
-                    >
-                      {copied === 'address' ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-
-                <Typography variant="subtitle2" sx={{ mb: 0.5, color: theme.palette.text.secondary, display: 'flex', alignItems: 'center' }}>
-                  <LinkIcon fontSize="small" sx={{ mr: 0.5 }} /> Metadata URI
-                </Typography>
-
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ mr: 1, fontFamily: 'monospace' }} noWrap>
-                    {orderData.nftUri.substring(0, 20)}...
-                  </Typography>
-                  <Tooltip
-                    title={copied === 'uri' ? 'Copied!' : 'Copy URI'}
-                    TransitionComponent={Zoom}
-                  >
-                    <IconButton
-                      size="small"
-                      onClick={() => handleCopy(orderData.nftUri, 'uri')}
-                    >
-                      {copied === 'uri' ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Box>
-            </Grid2>
-            <Grid2 size={7}>
-              <Box sx={{ height: "500px", p: 3, pb: 0, overflow: "scroll" }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <ChatIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                    Communication
-                  </Typography>
-                </Box>
-
-
-                <Paper
-                  elevation={0}
-                  sx={{
-                    height: 'calc(100% - 40px)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 2,
-                    overflow: 'hidden'
-                  }}
-                >
-                  {/* Messages container */}
-                  <Box ref={messagesContainerRef} sx={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    p: 2,
-                    bgcolor: 'rgba(246, 244, 240, 0.5)'
-                  }}>
-                    <List>
-                      {messages.map((message, index) => (
-                        <Grow
-                          key={index}
-                          in={true}
-                          style={{ transformOrigin: message.sender === userId ? 'right' : 'left' }}
-                          timeout={500}
-                        >
-                          <ListItem
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: message.sender === userId ? 'flex-end' : 'flex-start',
-                              px: 1
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 0.5 }}>
-                              <Box
-                                sx={{
-                                  p: 2,
-                                  bgcolor: message.sender === userId
-                                    ? theme.palette.primary.main
-                                    : theme.palette.background.paper,
-                                  color: message.sender === userId
-                                    ? theme.palette.primary.contrastText
-                                    : theme.palette.text.primary,
-                                  borderRadius: 2,
-                                  maxWidth: '70%',
-                                  boxShadow: message.sender === userId
-                                    ? 'none'
-                                    : theme.shadows[1]
-                                }}
-                              >
-                                <Typography variant="body2">
-                                  {message.message}
-                                </Typography>
-                              </Box>
-
-                              <ListItemAvatar sx={{ minWidth: 40 }}>
-                                <Avatar
-                                  src={orderData.buyerAvatar}
-                                  sx={{ width: 32, height: 32 }}
-                                />
-                              </ListItemAvatar>
-
-                            </Box>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                px: 2,
-                                color: theme.palette.text.secondary
-                              }}
-                            >
-                              {new Date(message.timestamp).toLocaleString()}
-                            </Typography>
-                          </ListItem>
-                        </Grow>
-                      ))}
-                    </List>
-                  </Box>
-
-                  {/* Input field */}
-                  <Box sx={{
-                    display: 'flex',
-                    p: 2,
-                    borderTop: `1px solid ${theme.palette.divider}`,
-                    bgcolor: theme.palette.background.paper
-                  }}>
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      placeholder="Type a message..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      size="small"
-                      sx={{
-                        mr: 1,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 4
-                        }
-                      }}
-                    />
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={sendMessage}
-                      disabled={!newMessage.trim()}
-                      sx={{
-                        minWidth: 'auto',
-                        borderRadius: 2,
-                        px: 2
-                      }}
-                    >
-                      <SendIcon />
-                    </Button>
-                  </Box>
-                </Paper>
-              </Box>
-            </Grid2>
-          </Grid2>
-
-          <Divider />
-          {/* Order Details Section */}
-          <Box sx={{ height: '50%', p: 3, pt: 2, overflow: "auto" }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <AssignmentIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                Order Details
-              </Typography>
-            </Box>
+        <Grid2 container>
+          <Grid2 size={5}>
 
             <Box
-              component={motion.div}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
               sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: 3
+                borderRight: `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                flexDirection: 'column',
+                p: 3
               }}
             >
-              {/* Left column */}
-              <Box>
-                <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
-                  <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
-                    <AssignmentIcon fontSize="small" sx={{ mr: 0.5 }} /> Order ID
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body2" fontFamily="monospace" sx={{ mr: 1 }}>
-                      {orderData.orderId}
-                    </Typography>
-                    <Tooltip
-                      title={copied === 'orderId' ? 'Copied!' : 'Copy Order ID'}
-                      TransitionComponent={Zoom}
-                    >
-                      <IconButton
-                        size="small"
-                        onClick={() => handleCopy(orderData.orderId, 'orderId')}
-                      >
-                        {copied === 'orderId' ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </Paper>
 
+              <Typography
+                variant="h5"
+                component={motion.div}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                sx={{ mb: 2, fontWeight: 'bold' }}
+              >
+                NFT Details
+              </Typography>
+
+              <Box
+                component={motion.div}
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                sx={{
+                  position: 'relative',
+                  mb: 2,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  boxShadow: theme.shadows[1]
+                }}
+              >
+                <Box
+                  component="img"
+                  src={`http://localhost:8000${orderData.nftImageUrl}`}
+                  alt={orderData.nftName}
+                  sx={{
+                    width: '100%',
+                    height: 220,
+                    objectFit: 'cover',
+                    backgroundColor: 'rgba(0,0,0,0.04)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                />
+                <IconButton
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    bgcolor: 'rgba(255,255,255,0.8)',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
+                  }}
+                >
+                  <ImageIcon fontSize="small" />
+                </IconButton>
+              </Box>
+
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                {orderData.nftName}
+              </Typography>
+
+              <Chip
+                label={orderData.nftSymbol}
+                size="small"
+                color="primary"
+                sx={{ alignSelf: 'flex-start', mb: 2 }}
+              />
+
+              <Typography variant="subtitle2" sx={{ mb: 0.5, color: theme.palette.text.secondary, display: 'flex', alignItems: 'center' }}>
+                <LinkIcon fontSize="small" sx={{ mr: 0.5 }} /> NFT Address
+              </Typography>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Typography variant="body2" sx={{ mr: 1, fontFamily: 'monospace' }}>
+                  {truncateAddress(orderData.nftAddress)}
+                </Typography>
+                <Tooltip
+                  title={copied === 'address' ? 'Copied!' : 'Copy Address'}
+                  TransitionComponent={Zoom}
+                >
+                  <IconButton
+                    size="small"
+                    onClick={() => handleCopy(orderData.nftAddress, 'address')}
+                  >
+                    {copied === 'address' ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
+                  </IconButton>
+                </Tooltip>
+              </Box>
+
+              <Typography variant="subtitle2" sx={{ mb: 0.5, color: theme.palette.text.secondary, display: 'flex', alignItems: 'center' }}>
+                <LinkIcon fontSize="small" sx={{ mr: 0.5 }} /> Metadata URI
+              </Typography>
+
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ mr: 1, fontFamily: 'monospace' }} noWrap>
+                  {orderData.nftUri.substring(0, 20)}...
+                </Typography>
+                <Tooltip
+                  title={copied === 'uri' ? 'Copied!' : 'Copy URI'}
+                  TransitionComponent={Zoom}
+                >
+                  <IconButton
+                    size="small"
+                    onClick={() => handleCopy(orderData.nftUri, 'uri')}
+                  >
+                    {copied === 'uri' ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+          </Grid2>
+          <Grid2 size={7}>
+            <Box sx={{ height: "500px", p: 3, pb: 0, overflow: "scroll" }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <ChatIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                  Communication
+                </Typography>
+              </Box>
+
+
+              <Paper
+                elevation={0}
+                sx={{
+                  height: 'calc(100% - 40px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 2,
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Messages container */}
+                <Box ref={messagesContainerRef} sx={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  p: 2,
+                  bgcolor: 'rgba(246, 244, 240, 0.5)'
+                }}>
+                  <List>
+                    {messages.map((message, index) => (
+                      <Grow
+                        key={index}
+                        in={true}
+                        style={{ transformOrigin: message.sender === userId ? 'right' : 'left' }}
+                        timeout={500}
+                      >
+                        <ListItem
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: message.sender === userId ? 'flex-end' : 'flex-start',
+                            px: 1
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 0.5 }}>
+                            <Box
+                              sx={{
+                                p: 2,
+                                bgcolor: message.sender === userId
+                                  ? theme.palette.primary.main
+                                  : theme.palette.background.paper,
+                                color: message.sender === userId
+                                  ? theme.palette.primary.contrastText
+                                  : theme.palette.text.primary,
+                                borderRadius: 2,
+                                maxWidth: '70%',
+                                boxShadow: message.sender === userId
+                                  ? 'none'
+                                  : theme.shadows[1]
+                              }}
+                            >
+                              <Typography variant="body2">
+                                {message.message}
+                              </Typography>
+                            </Box>
+
+                            <ListItemAvatar sx={{ minWidth: 40 }}>
+                              <Avatar
+                                src={orderData.buyerAvatar}
+                                sx={{ width: 32, height: 32 }}
+                              />
+                            </ListItemAvatar>
+
+                          </Box>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              px: 2,
+                              color: theme.palette.text.secondary
+                            }}
+                          >
+                            {new Date(message.timestamp).toLocaleString()}
+                          </Typography>
+                        </ListItem>
+                      </Grow>
+                    ))}
+                  </List>
+                </Box>
+
+                {/* Input field */}
+                <Box sx={{
+                  display: 'flex',
+                  p: 2,
+                  borderTop: `1px solid ${theme.palette.divider}`,
+                  bgcolor: theme.palette.background.paper
+                }}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    size="small"
+                    sx={{
+                      mr: 1,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 4
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={sendMessage}
+                    disabled={!newMessage.trim()}
+                    sx={{
+                      minWidth: 'auto',
+                      borderRadius: 2,
+                      px: 2
+                    }}
+                  >
+                    <SendIcon />
+                  </Button>
+                </Box>
+              </Paper>
+            </Box>
+          </Grid2>
+        </Grid2>
+
+        <Divider />
+        {/* Order Details Section */}
+        <Box sx={{ height: '50%', p: 3, pt: 2, overflow: "auto" }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <AssignmentIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+              Order Details
+            </Typography>
+          </Box>
+
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 3
+            }}
+          >
+            {/* Left column */}
+            <Box>
+              <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                  <AssignmentIcon fontSize="small" sx={{ mr: 0.5 }} /> Order ID
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2" fontFamily="monospace" sx={{ mr: 1 }}>
+                    {orderData.orderId}
+                  </Typography>
+                  <Tooltip
+                    title={copied === 'orderId' ? 'Copied!' : 'Copy Order ID'}
+                    TransitionComponent={Zoom}
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={() => handleCopy(orderData.orderId, 'orderId')}
+                    >
+                      {copied === 'orderId' ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Paper>
+              {orderData.orderStatus !== "pending" &&
                 <Paper
                   elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}
                 >
@@ -747,14 +791,26 @@ const NFTOrderDetails: React.FC = () => {
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                          {userId === orderData.ownerId ? <PersonIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} /> : <WalletIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} />}
+                          {orderData.shippingDetails.shippingMethod === "self" ?
+                            <PersonIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} /> :
+                            (userId === orderData.ownerId ?
+                              <PersonIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} /> :
+                              <WalletIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} />)}
                           <Typography variant="body1" fontWeight="medium">
                             {orderData.sellerName}
                           </Typography>
                         </Box>
 
                         <Box sx={{ pl: 3 }}>
-                          {userId === orderData.ownerId ? formatAddress(orderData.shippingDetails?.seller_address) : truncateAddress(orderData.sellerAddress)}
+                          {orderData.shippingDetails.shippingMethod === "self" ?
+                            formatAddress(orderData.shippingDetails?.seller_address) :
+                            (
+                              userId === orderData.ownerId ?
+                                formatAddress(orderData.shippingDetails?.seller_address) :
+                                truncateAddress(orderData.sellerAddress)
+                            )
+                          }
+
                         </Box>
                       </Paper>
                     </Grid2>
@@ -777,14 +833,25 @@ const NFTOrderDetails: React.FC = () => {
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                          {userId !== orderData.ownerId ? <PersonIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} /> : <WalletIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} />}
+                          {orderData.shippingDetails.shippingMethod === "self" ?
+                            <PersonIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} /> :
+                            (userId === orderData.ownerId ?
+                              <PersonIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} /> :
+                              <WalletIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} />)}
                           <Typography variant="body1" fontWeight="medium">
                             {orderData.buyerName}
                           </Typography>
                         </Box>
 
                         <Box sx={{ pl: 3 }}>
-                          {userId !== orderData.ownerId ? formatAddress(orderData.shippingDetails?.buyer_address) : truncateAddress(orderData.buyerAddress)}
+                          {orderData.shippingDetails.shippingMethod === "self" ?
+                            formatAddress(orderData.shippingDetails?.buyer_address) :
+                            (
+                              userId === orderData.ownerId ?
+                                formatAddress(orderData.shippingDetails?.buyer_address) :
+                                truncateAddress(orderData.sellerAddress)
+                            )
+                          }
                         </Box>
                       </Paper>
                     </Grid2>
@@ -822,99 +889,108 @@ const NFTOrderDetails: React.FC = () => {
                       </Box>
                     </Grid2>
                   </Grid2>
+                </Paper>}
+            </Box>
 
-                  {/* Shipping Method */}
-
-
-
-                </Paper>
-              </Box>
-
-              {/* Right column */}
-              <Box>
-                <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
-                        <TrackChangesIcon fontSize="small" sx={{ mr: 0.5 }} /> Order Status
-                      </Typography>
-                      <Chip
-                        label={orderData.orderStatus.toUpperCase()}
-                        sx={{
-                          bgcolor: getStatusColor(),
-                          color: '#fff',
-                          fontWeight: 'bold'
-                        }}
-                      />
-                    </Box>
-
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
-                        <PaymentsIcon fontSize="small" sx={{ mr: 0.5 }} /> Payment
-                      </Typography>
-                      <Chip
-                        label={orderData.paymentStatus.toUpperCase()}
-                        sx={{
-                          bgcolor: getPaymentStatusColor(),
-                          color: '#fff',
-                          fontWeight: 'bold'
-                        }}
-                      />
-                    </Box>
+            {/* Right column */}
+            <Box>
+              <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Box>
+                    <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                      <TrackChangesIcon fontSize="small" sx={{ mr: 0.5 }} /> Order Status
+                    </Typography>
+                    <Chip
+                      label={orderData.orderStatus.toUpperCase()}
+                      sx={{
+                        bgcolor: getStatusColor(),
+                        color: '#fff',
+                        fontWeight: 'bold'
+                      }}
+                    />
                   </Box>
 
-
-                </Paper>
-
-                <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
-                  {!orderData.shippingDetails.isBuyerConfirmed || !orderData.shippingDetails.isSellerConfirmed ? (
-                    <OrderManagement
-                      orderId={orderData.orderId}
-                      price={orderData.price}
-                      isSeller={orderData.ownerId === userId}
-                      updatePrice={updatePrice}
-                      updateAddress={updateAddress}
-                      buyerConfirmed={orderData.shippingDetails.isBuyerConfirmed}
+                  <Box>
+                    <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                      <PaymentsIcon fontSize="small" sx={{ mr: 0.5 }} /> Payment
+                    </Typography>
+                    <Chip
+                      label={orderData.paymentStatus.toUpperCase()}
+                      sx={{
+                        bgcolor: getPaymentStatusColor(),
+                        color: '#fff',
+                        fontWeight: 'bold'
+                      }}
                     />
-                  ) : (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
-                        <TrackChangesIcon fontSize="small" sx={{ mr: 0.5 }} /> Tracking Number
-                      </Typography>
+                    {(orderData.ownerId !== userId) &&
+                      (orderData.paymentStatus === "unpaid")
+                      ? <Payment amount={Number(orderData.price) / 2} walletAddress={orderData.buyerAddress} /> : null} 
+                  </Box>
+                </Box>
 
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" fontFamily="monospace" sx={{ mr: 1 }}>
-                          {orderData.shippingDetails.trackingNumber}
+
+              </Paper>
+
+              <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                {!orderData.shippingDetails.isBuyerConfirmed || !orderData.shippingDetails.isSellerConfirmed ? (
+                  <OrderManagement
+                    orderId={orderData.orderId}
+                    price={orderData.price}
+                    isSeller={orderData.ownerId === userId}
+                    updatePrice={updatePrice}
+                    buyerConfirmed={orderData.shippingDetails.isBuyerConfirmed}
+                    onConfirm={confirmOrder}
+                  />
+                ) : (
+                  <Box sx={{ mt: 2 }}>
+                    {orderData.shippingDetails.shippingMethod === "swap" &&
+                      <>
+                        <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                          <TrackChangesIcon fontSize="small" sx={{ mr: 0.5 }} /> Tracking Number
                         </Typography>
-                        <Tooltip
-                          title={copied === 'tracking' ? 'Copied!' : 'Copy Tracking'}
-                          TransitionComponent={Zoom}
-                        >
-                          <IconButton
-                            size="small"
-                            onClick={() => handleCopy(orderData.shippingDetails.trackingNumber || '', 'tracking')}
+
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="body2" fontFamily="monospace" sx={{ mr: 1 }}>
+                            {orderData.shippingDetails.trackingNumber}
+                          </Typography>
+                          <Tooltip
+                            title={copied === 'tracking' ? 'Copied!' : 'Copy Tracking'}
+                            TransitionComponent={Zoom}
                           >
-                            {copied === 'tracking' ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
-                          </IconButton>
-                        </Tooltip>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleCopy(orderData.shippingDetails.trackingNumber || '', 'tracking')}
+                            >
+                              {copied === 'tracking' ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </>}
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="body2" color="text.secondary" component="span">
+                        Shipping Method:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium" component="span" sx={{ ml: 1 }}>
+                        {String(orderData.shippingDetails.shippingMethod).toUpperCase()} 
+                      </Typography>
                       </Box>
-                      <Box sx={{ mt: 2 }}>
+                      <Box>
                         <Typography variant="body2" color="text.secondary" component="span">
-                          Shipping Method:
+                          Price: 
                         </Typography>
-                        <Typography variant="body1" fontWeight="medium" component="span" sx={{ ml: 1 }}>
-                          {orderData.shippingDetails.shippingMethod}
+                        <Typography variant="body1" color="dark" fontWeight="medium" component="span" sx={{ ml: 1 }}> 
+                           ${orderData.price}
                         </Typography>
                       </Box>
-                    </Box>
-                  )
-                  }
+                  </Box>
+                )
+                }
 
-                </Paper>
-              </Box>
+              </Paper>
             </Box>
           </Box>
         </Box>
+      </Box>
       {/* </Card> */}
     </Container>
   );

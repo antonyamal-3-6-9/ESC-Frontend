@@ -114,23 +114,37 @@ const NFTCollection: React.FC = () => {
 
   const [nftAssets, setNftAssets] = useState<NFTAsset[]>([] as NFTAsset[]);
 
+
+
   const fetchData = async () => {
-    dispatch(setLoading(true))
+    dispatch(setLoading(true));
+    dispatch(setAlertOn(false))
     try {
-      const response = await API.get("nfts/owner/list/")
-      setNftAssets(response.data.nfts)
-      console.log(response.data.nfts)
-      console.log(nftAssets)
-      dispatch(setLoading(false))
+      const response = await API.get("nfts/owner/list/");
+      if (response?.data?.nfts && Array.isArray(response.data.nfts)) {
+        setNftAssets(response.data.nfts);
+      } else {
+        setNftAssets([]);
+        dispatch(setAlertMessage("⚠️ Failed to load NFT data."));
+        dispatch(setAlertSeverity("warning"));
+        dispatch(setAlertOn(true));
+      }
     } catch (error) {
-      console.log(error)
-      dispatch(setLoading(false))
+      console.error("Error fetching NFTs:", error);
+      setNftAssets([]);
+      dispatch(setAlertMessage("❌ Error fetching NFTs."));
+      dispatch(setAlertSeverity("error"));
+      dispatch(setAlertOn(true));
+    } finally {
+      dispatch(setLoading(false));
     }
-  }
+  };
 
   useEffect(() =>  {
     fetchData();
   }, [])
+
+
   
   async function handleListNFT(nftId: number) { 
     dispatch(setLoading(true))
@@ -151,7 +165,7 @@ const NFTCollection: React.FC = () => {
   };
 
   const renderNFTCard = (nft: NFTAsset) => (
-    <Fade in timeout={800}>
+    <Fade in timeout={800} key={nft.id}>
       <Grid item xs={12} sm={6} md={4}>
         <StyledCard>
           <CardOverlay className="card-overlay" />
@@ -267,12 +281,22 @@ const NFTCollection: React.FC = () => {
     </Fade>
   );
 
+  if (nftAssets.length === 0) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Typography variant="h5" align="center">
+          🧐 No NFTs found in your collection.
+        </Typography>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom fontWeight="600">
         My NFT Collection
       </Typography>
-      
+
       <TabContext value={activeTab}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           <TabList onChange={(_, value) => setActiveTab(value)}>
@@ -280,25 +304,25 @@ const NFTCollection: React.FC = () => {
             <Tab label="CNFTs" value="2" />
           </TabList>
         </Box>
-        
+
         <TabPanel value="1">
           <Grid container spacing={3}>
-            {nftAssets
-              .filter(nft => nft.nftType === null)
+            {(Array.isArray(nftAssets) ? nftAssets : [])
+              .filter(nft => !nft.nftType || nft.nftType === null || nft.nftType === 'NFT')
               .map(nft => renderNFTCard(nft))}
           </Grid>
         </TabPanel>
-        
+
         <TabPanel value="2">
           <Grid container spacing={3}>
-            {nftAssets
+            {(Array.isArray(nftAssets) ? nftAssets : [])
               .filter(nft => nft.nftType === 'CNFT')
               .map(nft => renderNFTCard(nft))}
           </Grid>
         </TabPanel>
-        
       </TabContext>
     </Container>
+
   );
 };
 

@@ -30,6 +30,8 @@ import { Theme } from '@mui/material/styles'
 import { API } from '../API/api'
 import Logo from "../logos/svg/logo-color.svg"
 import { SwapCoinPurchaseButton } from './Payment'
+import { setLoading } from '../../Redux/alertBackdropSlice'
+import { useDispatch } from 'react-redux'
 
 declare module '@mui/material/styles' {
   interface Palette {
@@ -124,6 +126,8 @@ const formatDate = (dateString: string | undefined): string => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+
+
 const Wallet: React.FC = () => {
   const [walletData, setWalletData] = useState<WalletData>({
     public_key: '',
@@ -132,15 +136,20 @@ const Wallet: React.FC = () => {
     recieved_transaction: [] as Transaction[]
   })
 
+  const dispatch = useDispatch()
+
   const [tabValue, setTabValue] = useState<number>(0);
 
   async function getWalletData() {
+    dispatch(setLoading(true))
     try {
       const response = await API.get('/wallet/retrieve/')
       console.log(response.data.wallet)
       setWalletData(response.data.wallet)
     } catch (error) {
       console.log(error)
+    } finally { 
+      dispatch(setLoading(false))
     }
   }
 

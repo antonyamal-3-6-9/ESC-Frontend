@@ -28,6 +28,7 @@ interface TransferData {
  * @returns Transaction signature or error message.
  */
 
+
 export async function decryptAndTransfer(
     amount: number,
     treasuryPublic: string,
@@ -37,7 +38,87 @@ export async function decryptAndTransfer(
     encKey: string
 ): Promise<string> {
     try {
-        // Validate required parameters
+        // Basic validation
+        if (!key || !encKey) {
+            throw new Error("Decryption key or encrypted key is missing.");
+        }
+        if (!rpcUrl || !mintAddress || !treasuryPublic) {
+            throw new Error("Missing required parameters: RPC URL, Mint Address, or Treasury Address.");
+        }
+
+        console.log("🔐 Decrypting wallet...");
+        let wallet;
+        try {
+            wallet = await getWallet(encKey, key);
+            if (!wallet) throw new Error("Wallet decryption returned null.");
+            console.log("✅ Wallet successfully decrypted.");
+        } catch (err) {
+            throw new Error(`Wallet decryption failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+        }
+
+        const connection = new Connection(rpcUrl, "confirmed");
+
+        // Step 1: Check SOL balance
+        let userSOLBalance = 0;
+        try {
+            userSOLBalance = await connection.getBalance(wallet.publicKey);
+            console.log(`💰 User SOL Balance: ${userSOLBalance / 10 ** 9} SOL`);
+        } catch (err) {
+            throw new Error(`Failed to fetch SOL balance: ${err instanceof Error ? err.message : "Unknown error"}`);
+        }
+
+        // Step 2: Airdrop if needed
+        const minSOLRequired = 5000;
+        if (userSOLBalance < minSOLRequired) {
+            console.log("⚠️ Low SOL balance. Requesting airdrop...");
+            try {
+                await API.post("wallet/airdrop/", {
+                    password: key,
+                    need: "mint",
+                    publicKey: wallet.publicKey.toBase58(),
+                });
+                console.log("✅ Airdrop requested successfully.");
+            } catch (err) {
+                throw new Error(`Airdrop request failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+            }
+        }
+
+        // Step 3: Token transfer to treasury
+        console.log("🚀 Initiating token transfer to treasury...");
+        try {
+            const signature = await transferToTreasury(
+                wallet,
+                amount,
+                treasuryPublic,
+                mintAddress,
+                rpcUrl
+            );
+            console.log(`✅ Transfer complete! Signature: ${signature}`);
+            return signature;
+        } catch (err) {
+            throw new Error(`Token transfer failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+        }
+    } catch (error) {
+        const msg =
+            error instanceof Error
+                ? `Transaction failed: ${error.message}`
+                : "Transaction failed: Unknown error";
+        console.error("❌", msg);
+        throw new Error(msg);
+    }
+}
+
+
+
+
+
+export async function decryptAndTransferEscrow(amount: number,
+    treasuryPublic: string,
+    rpcUrl: string,
+    mintAddress: string,
+    key: string,
+    encKey: string): Promise<string> {
+    try {
         if (!key || !encKey) {
             throw new Error("Decryption key or encrypted key is missing.");
         }
@@ -45,46 +126,17 @@ export async function decryptAndTransfer(
             throw new Error("Missing required parameters: RPC_URL, TOKEN_MINT_ADDRESS, or TREASURY_ADDRESS.");
         }
 
-        console.log("Decrypting wallet...");
-        const wallet = await getWallet(encKey, key); // Step 1: Decrypt wallet
-        console.log("Wallet successfully decrypted.");
-
-        const connection = new Connection(rpcUrl, "confirmed");
-        const minSOLRequired = 5000; // Minimum SOL required for transactions
+        const wallet = await getWallet(encKey, key);
 
         if (wallet === null) {
             throw new Error("Wallet decryption failed.");
         }
 
-        // Step 2: Check user's SOL balance
-        const userSOLBalance = await connection.getBalance(wallet.publicKey);
-        console.log(`💰 User SOL Balance: ${userSOLBalance / 10 ** 9} SOL`);
+        const txSignature = await transferToTreasury(wallet, amount, treasuryPublic, mintAddress, rpcUrl);
 
-        // Step 3: Airdrop SOL if balance is insufficient
-        if (userSOLBalance < minSOLRequired) {
-            console.log("⚠️ Low SOL balance detected. Requesting airdrop...");
-            await API.post("wallet/airdrop/", {
-                password: key,
-                need: "mint",
-                publicKey: wallet.publicKey.toBase58(),
-            });
-            console.log("✅ Airdrop successful!");
-        }
+        return txSignature;
 
-        // Step 4: Transfer tokens to the treasury
-        console.log("Initiating transfer...");
-        const signature = await transferToTreasury(
-            wallet,
-            amount,
-            treasuryPublic,
-            mintAddress,
-            rpcUrl
-        );
-        console.log("✅ Transfer successful!");
-
-        return signature; // Return the transaction signature
     } catch (error) {
-        console.error("❌ Error in decryptAndTransfer:", error);
         throw new Error(
             error instanceof Error
                 ? `Transaction failed: ${error.message}`
@@ -92,6 +144,8 @@ export async function decryptAndTransfer(
         );
     }
 }
+
+
 
 
 export async function decryptAndTransferNFT(

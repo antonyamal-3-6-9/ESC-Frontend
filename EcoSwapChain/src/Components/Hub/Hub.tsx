@@ -31,7 +31,7 @@ import { API } from '../API/api';
 import { GraphRef } from './HubConnectionMap';
 
 // Define TypeScript interfaces
-interface Hub {
+export interface Hub {
     id: number;
     latitude: number;
     longitude: number;

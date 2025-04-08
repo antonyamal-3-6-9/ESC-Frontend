@@ -58,7 +58,7 @@ const KeyModal: React.FC<KeyModalProps> = ({ passKey, open, setOpen }) => {
     const handleClose = () => {
         if (acknowledged) {
             setOpen(false);
-            navigate('/');
+            navigate('/trader/address/create');
         }
     };
 

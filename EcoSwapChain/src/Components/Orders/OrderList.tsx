@@ -273,11 +273,9 @@ const NFTOrderListing: React.FC = () => {
   return (
 
     
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <RouteDisplayC />
-
+    <Container maxWidth="lg">
       <TabContext value={activeTab}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, mt: 7 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider'}}>
           <TabList
             onChange={(_, value) => setActiveTab(value)}
             textColor="primary"

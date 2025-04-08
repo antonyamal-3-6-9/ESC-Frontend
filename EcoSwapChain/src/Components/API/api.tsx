@@ -60,8 +60,8 @@ const handleErrorResponse = (error: any) => {
       )
       break
     case 404:
-      console.error('Not Found:', data)
-      dispatchAlert('Requested resource not found.', 'error')
+      console.error('Not Found:', data.message)
+      dispatchAlert(`Requested resource not found, ${data.message}`, 'error')
       break
     case 500:
       console.error('Server Error:', data)

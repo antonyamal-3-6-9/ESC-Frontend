@@ -6,7 +6,7 @@ import Register from './Components/Registration/TraderRegistration'
 import Login from './Components/Login/Login'
 import { useDispatch } from 'react-redux'
 import { checkAuth } from './Redux/userActions'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import WalletModal from './Components/Wallet/WalletModal'
 import BackDrop from './Components/Backdrop/Backdrop'
 import ProductGrid from './Components/NFT/listNFT'
@@ -17,6 +17,7 @@ import NFTOrderListing from './Components/Orders/OrderList'
 import ProfileCard from './Components/Profile/ProfileCard'
 import LandingPageThree from './Components/LandingPage/L3'
 import SwapchainNavbar from './Components/Admin/AdminNavbar'
+import AddressForm from './Components/Address/AddressForm'
 
 import HubManagementDashboard from './Components/Hub/Hub'
 
@@ -76,6 +77,8 @@ function App() {
         <Route path='/admin/dashboard' element={<NFTAdminDashboard />} />
         <Route path="/admin/hub/manage/" element={<HubManagementDashboard />} />
         <Route path='/admin/hub/add/' element={<ShippingHubForm />} />
+
+        <Route path="/trader/address/create"  element={<AddressForm />} />
 
       </Routes>
       <WalletModal/>

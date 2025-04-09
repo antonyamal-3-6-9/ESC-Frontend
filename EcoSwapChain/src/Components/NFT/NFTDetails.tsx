@@ -56,7 +56,7 @@ import NFTOwnershipHistoryModal from './OwnershipHistory';
 
 
 
-interface Transaction {
+export interface NFTTransaction {
   transferedTo: string;
   transferedFrom: string;
   transactionHash: string;
@@ -119,7 +119,7 @@ interface NFTDetails {
   status: boolean;
   traderId: number;
   product: Product;
-  ownershipHistory: Transaction[];
+  ownershipHistory: NFTTransaction[];
 }
 
 // Styled Components

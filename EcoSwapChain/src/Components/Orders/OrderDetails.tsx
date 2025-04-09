@@ -49,6 +49,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { setAlertMessage, setAlertOn, setAlertSeverity, setLoading } from '../../Redux/alertBackdropSlice';
 import { useDispatch } from 'react-redux';
 import Payment from './OrderPayment';
+import TransferOwnershipModal from './TransferOwnership';
+import { Transaction } from '../Wallet/Wallet';
+import { NFTTransaction } from '../NFT/NFTDetails';
 
 
 
@@ -103,12 +106,14 @@ interface NFTOrderDetailsProps {
   | 'out-for-delivery'
   | 'delivered'
   | 'cancelled';
-  paymentStatus: 'unpaid' | 'paid' | 'processing' | 'failed';
+  paymentStatus: 'unpaid' | 'paid' | 'escrow' | 'failed';
   createdAt: Date;
   updatedAt: Date;
   ownerId: number;
   price: string;
   shippingDetails: ShippingDetails;
+  escrowTransaction: Transaction;
+  ownershipTransferTransaction: NFTTransaction;
 }
 
 // Function to truncate Ethereum addresses
@@ -144,7 +149,7 @@ const NFTOrderDetails: React.FC = () => {
     buyerName: "",
     buyerAvatar: "",
     orderStatus: "pending",
-    paymentStatus: "processing",
+    paymentStatus: "unpaid",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48), // 48 hours ago
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 12), // 12 hours ago
     ownerId: 0,
@@ -175,6 +180,8 @@ const NFTOrderDetails: React.FC = () => {
       sourceHub: {} as Hub,
       destinationHub: {} as Hub,
     },
+    escrowTransaction: {} as Transaction,
+    ownershipTransferTransaction: {} as NFTTransaction
   });
 
 
@@ -295,7 +302,7 @@ const NFTOrderDetails: React.FC = () => {
             isSellerConfirmed: true,
           },
         }));
-      } else if (data.type === "order_confirmation") {
+      } else if (data.type === "order_update") {
         setOrderData((prev) => ({
           ...prev,
           shippingDetails: {
@@ -304,6 +311,17 @@ const NFTOrderDetails: React.FC = () => {
             sourceHub: data.shipping_method === "swap" ? data.source_hub : null,
             destinationHub: data.shipping_method === "swap" ? data.destination_hub : null,
           },
+        }));
+      } else if (data.type === "ownership_transfer") {
+        setOrderData((prev) => ({
+          ...prev,
+          paymentStatus: "paid",
+          escrowTransaction: {
+            ...prev.escrowTransaction,
+            transactionHash: data.transaction_hash,
+            status: data.status,
+            timeStamp: data.timestamp,
+          }
         }));
       }
     };
@@ -375,7 +393,7 @@ const NFTOrderDetails: React.FC = () => {
   const getPaymentStatusColor = () => {
     switch (orderData.paymentStatus) {
       case 'paid': return theme.palette.success.main;
-      case 'processing': return theme.palette.warning.main;
+      case 'escrow': return theme.palette.warning.main;
       case 'failed': return theme.palette.error.main;
       default: return theme.palette.primary.main;
     }
@@ -407,6 +425,31 @@ const NFTOrderDetails: React.FC = () => {
     } catch (error) {
       console.log(error)
     }
+  }
+
+
+  const onComplete = async (amount: number, tx: string) => {
+    try {
+      const { data } = await API.post('order/init/escrow/', {
+        amount: amount,
+        orderId: orderData.orderId,
+        tx: tx
+      })
+      setOrderData((prev) => ({
+        ...prev,
+        paymentStatus: "escrow",
+        escrowTransaction: data.transactionData
+      }))
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const onNFTTransferComplete = async (data: NFTTransaction) => {
+    setOrderData((prev) => ({
+      ...prev,
+      ownershipTransferTransaction: data
+    }))
   }
 
 
@@ -922,9 +965,25 @@ const NFTOrderDetails: React.FC = () => {
                         fontWeight: 'bold'
                       }}
                     />
+
                     {(orderData.ownerId !== userId) &&
                       (orderData.paymentStatus === "unpaid")
-                      ? <Payment amount={Number(orderData.price) / 2} walletAddress={orderData.buyerAddress} /> : null} 
+                      && (orderData.orderStatus !== "pending")
+
+                      ? <Payment
+                        amount={Number(orderData.price) / 2}
+                        walletAddress={orderData.buyerAddress}
+                        onComplete={onComplete}
+                      /> : (orderData.ownerId === userId) &&
+                        (orderData.paymentStatus === "escrow")
+                        && (orderData.orderStatus !== "pending")
+                        ?
+                        <TransferOwnershipModal
+                          entityName={orderData.nftName}
+                          onTransferComplete={onNFTTransferComplete}
+                          orderId={orderData.orderId}
+                        />
+                        : null}
                   </Box>
                 </Box>
 
@@ -943,6 +1002,52 @@ const NFTOrderDetails: React.FC = () => {
                   />
                 ) : (
                   <Box sx={{ mt: 2 }}>
+                    {(orderData.ownerId !== userId) &&
+                      (orderData.paymentStatus === "unpaid")
+                        && (orderData.orderStatus !== "pending")
+                      ?
+                      <Typography>
+                        Once the payment is made, it will be held in escrow until the ownership is transfered
+                      </Typography>
+                      : (orderData.ownerId === userId) &&
+                        (orderData.paymentStatus === "escrow")
+                          && (orderData.orderStatus !== "pending")
+                        ?
+                        <>
+                          <Typography>
+                            Payment from the buyer is held at escrow and will be credited to your wallet when the ownership transfer is completed
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+                            <Tooltip title={orderData.escrowTransaction.transaction_hash}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCopy(orderData.escrowTransaction.transaction_hash, 'transactionHash')}
+                              >
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Typography>
+                        </>
+                        : (orderData.ownerId !== userId) &&
+                            (orderData.paymentStatus === "escrow")
+                            && (orderData.orderStatus !== "pending")
+                          ? <>
+                            <Typography>
+                              Your Payment is safe and held at escrow
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+                              <Tooltip title={orderData.escrowTransaction.transaction_hash}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleCopy(orderData.escrowTransaction.transaction_hash, 'transactionHash')}
+                                >
+                                  <ContentCopyIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Typography>
+                          </>
+                          : null}
+
                     {orderData.shippingDetails.shippingMethod === "swap" &&
                       <>
                         <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
@@ -955,7 +1060,7 @@ const NFTOrderDetails: React.FC = () => {
                           </Typography>
                           <Tooltip
                             title={copied === 'tracking' ? 'Copied!' : 'Copy Tracking'}
-                            TransitionComponent={Zoom}
+                            slots={{ transition: Zoom }}
                           >
                             <IconButton
                               size="small"
@@ -971,17 +1076,53 @@ const NFTOrderDetails: React.FC = () => {
                         Shipping Method:
                       </Typography>
                       <Typography variant="body1" fontWeight="medium" component="span" sx={{ ml: 1 }}>
-                        {String(orderData.shippingDetails.shippingMethod).toUpperCase()} 
+                        {String(orderData.shippingDetails.shippingMethod).toUpperCase()}
                       </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary" component="span">
-                          Price: 
-                        </Typography>
-                        <Typography variant="body1" color="dark" fontWeight="medium" component="span" sx={{ ml: 1 }}> 
-                           ${orderData.price}
-                        </Typography>
-                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" component="span">
+                        Price:
+                      </Typography>
+                      <Typography variant="body1" color="dark" fontWeight="medium" component="span" sx={{ ml: 1 }}>
+                        ${orderData.price}
+                      </Typography>
+                    </Box>
+                    <Box>
+                        {orderData.paymentStatus === "paid" && <>
+                          <Typography variant="body2" color="text.secondary">
+                            Payment and Ownership Transfer has been successfully completed...
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" component="span" sx={{ mr: 1 }}>
+                            Payment Transaction Hash: 
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+                            <Tooltip title={orderData.escrowTransaction.transaction_hash}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCopy(orderData.escrowTransaction.transaction_hash, 'transactionHash')}
+                              >
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Typography>
+                          <Typography>
+                            amount: {orderData.escrowTransaction.amount}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" component="span" sx={{ mr: 1 }}>
+                            Ownership Transfer Transaction Hash: 
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+                            <Tooltip title={orderData.ownershipTransferTransaction.transactionHash}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCopy(orderData.ownershipTransferTransaction.transactionHash, 'transactionHash')}
+                              >
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Typography>
+                        </>}
+                    </Box>
                   </Box>
                 )
                 }

@@ -23,7 +23,6 @@ import {
   FilterList,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import RouteDisplayC from '../RouteDisplay';
 import { API } from '../API/api';
 import { useAppSelector } from '../../store';
 import { Link } from 'react-router';
@@ -39,7 +38,7 @@ interface Order {
   sellerAddress: string;
   buyerAddress: string;
   orderType: 'buy' | 'sell';
-  status: 'pending' | 'processing' | 'fulfilled';
+  status: 'pending' | 'processing' | 'fulfilled' | 'confirmed' ;
   createdAt: string;
 }
 
@@ -126,6 +125,7 @@ const NFTOrderListing: React.FC = () => {
       const response = await API.get(`/order/list/`);
       const ordersData = response.data.orders;
       ordersData.forEach((order: Order) => {
+        console.log(order.ownerId, userRefId.current)
         if (order.ownerId === userRefId.current) {
           order.orderType = "sell"
         } else {
@@ -244,7 +244,7 @@ const NFTOrderListing: React.FC = () => {
   // Group orders by type and status
   const renderOrdersByTypeAndStatus = (orderType: Order['orderType']) => {
     const filteredOrders = orders.filter(order => order.orderType === orderType);
-    const statuses: Order['status'][] = ['pending', 'processing', 'fulfilled'];
+    const statuses: Order['status'][] = ['pending', 'processing', 'fulfilled', 'confirmed'];
 
     return (
       <Box>

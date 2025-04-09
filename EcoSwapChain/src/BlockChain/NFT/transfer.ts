@@ -1,43 +1,63 @@
-import { Connection, PublicKey, Keypair, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import {
-    createTransferCheckedInstruction,
-    getOrCreateAssociatedTokenAccount,
-    getAssociatedTokenAddress
-} from "@solana/spl-token";
+    mplTokenMetadata,
+    TokenStandard
+} from "@metaplex-foundation/mpl-token-metadata";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
+    Connection,
+    Keypair,
+} from "@solana/web3.js";
+import {
+    generateSigner,
+    keypairIdentity,
+    publicKey,
+    transactionBuilder
+} from "@metaplex-foundation/umi";
+import { transferV1 } from '@metaplex-foundation/mpl-token-metadata'
 
-export async function transferNFT(sender: Keypair, recipient: PublicKey, mintAddress: PublicKey, rpcUrl: string) {
+export async function transferNFT(
+    senderKeypair: Keypair,       // Sender's secret key (Uint8Array)
+    recipientAddress: string,        // Recipient's wallet public key (base58)
+    mintAddress: string,             // NFT mint address (base58)
+    rpcUrl: string                   // Solana RPC URL
+): Promise<string> {
+
     try {
-        const connection: Connection = new Connection(rpcUrl, "confirmed");
-        // Get sender's associated token account (ATA) for the NFT
-        const senderATA: PublicKey = await getAssociatedTokenAddress(mintAddress, sender.publicKey);
 
-        // Get or create the recipient's ATA
-        const recipientATA = await getOrCreateAssociatedTokenAccount(
-            connection,
-            sender,
-            mintAddress,
-            recipient
+
+        const connection = new Connection(rpcUrl, "confirmed");
+        const umi = createUmi(connection.rpcEndpoint);
+        umi.use(mplTokenMetadata());
+        const umiSender = umi.eddsa.createKeypairFromSecretKey(senderKeypair.secretKey);
+        umi.use(keypairIdentity(umiSender));
+
+        const nftTransfer = generateSigner(umi);
+
+        const mint = publicKey(mintAddress);
+        const recipient = publicKey(recipientAddress)
+
+        // ✅ Build transaction
+        let tx = transactionBuilder();
+
+        // ✅ Add the transfer instruction (only)
+        tx = tx.add(
+            transferV1(umi, {
+                mint,
+                authority: nftTransfer,
+                tokenOwner: nftTransfer.publicKey,
+                destinationOwner: recipient,
+                tokenStandard: TokenStandard.NonFungible,
+            })
         );
 
-        // Create transfer instruction
-        const transferIx = createTransferCheckedInstruction(
-            senderATA,      // Sender's ATA
-            mintAddress,    // NFT Mint Address
-            recipientATA.address, // Recipient's ATA
-            sender.publicKey, // Sender
-            1,              // Amount (always 1 for NFTs)
-            0               // Decimals (always 0 for NFTs)
-        );
+        // ✅ Send and confirm the full transaction
+        const { signature } = await tx.sendAndConfirm(umi);
 
-        // Send transaction
-        const transaction = new Transaction().add(transferIx);
-        const tx = await sendAndConfirmTransaction(connection ,transaction, [sender]); 
+        console.log(`✅ NFT transferred! Tx: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
 
-        console.log(`NFT transferred! Tx: https://explorer.solana.com/tx/${tx}?cluster=devnet`);
-        return tx;
+        return String(signature);
     } catch (error) {
-        console.error("Error transferring NFT:", error);
-        throw new Error(`Transaction failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+        throw new Error(`NFT Transfer Failed: ${error}`);
     }
-}
 
+}

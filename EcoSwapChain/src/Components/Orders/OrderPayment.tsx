@@ -49,7 +49,7 @@ interface PaymentModalProps {
     onClose: () => void;
     amount: number;
     currencySymbol?: string;
-    onPaymentComplete?: (success: boolean) => void;
+    onPaymentComplete: (amount: number, tx: string) => void;
     walletAddress: string;
 }
 
@@ -132,29 +132,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             dispatch(setAlertMessage(`Error: Failed to initiate transfer. ${error}`));
             dispatch(setAlertOn(true));
             dispatch(setAlertSeverity("error"));
-
-            // Simulate failed payment
-            setTimeout(() => {
-                setStep('failure');
-                setError("Transaction authorization failed. Please check your password and try again.");
-                if (onPaymentComplete) {
-                    onPaymentComplete(false);
-                }
-            }, 2000);
-
+            setStep('failure');
+            setError("Transaction authorization failed. Please check your password and try again.");
             throw error;
         }
     };
 
     // Process payment
     const processPayment = async () => {
+        setStep('processing');
         try {
-            setStep('processing');
             const initTransfer = await initiateFeeTransfer();
             const tx = await decryptAndTransferEscrow(Number(amount), initTransfer.treasuryKey, initTransfer.rpcUrl, initTransfer.mintAddress, password, initTransfer.encKey);
             setTransactionId(tx)
-            
+            onPaymentComplete(amount, tx)
+            setStep('success')
         } catch (error) {
+            setStep('failure')
             console.error("❌ Payment processing failed:", error);
             // Error handling is already done in initiateFeeTransfer
         }
@@ -665,9 +659,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 interface PaymentProps {
     amount: number;
     walletAddress: string;
+    onComplete: (amount: number, tx: string) => void;
 }
 
-export const Payment: React.FC<PaymentProps> = ({ amount, walletAddress }) => {
+export const Payment: React.FC<PaymentProps> = ({ amount, walletAddress, onComplete }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -685,10 +680,7 @@ export const Payment: React.FC<PaymentProps> = ({ amount, walletAddress }) => {
                 onClose={() => setOpen(false)}
                 amount={amount}
                 walletAddress={walletAddress}
-                onPaymentComplete={(success) => {
-                    console.log(`Payment ${success ? 'successful' : 'failed'}`);
-                    // You can perform additional actions here based on payment status
-                }}
+                onPaymentComplete={onComplete}
             />
         </>
     );

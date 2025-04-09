@@ -46,8 +46,11 @@ export async function transferToTreasury(
         console.log("👤 User Token Account:", userTokenAccount.address.toBase58());
         console.log("🏦 Treasury Token Account:", treasuryTokenAccount.address.toBase58());
 
+        console.log(userTokenAccount.amount)
+        console.log(amount * 10 ** 6)
+
         // Ensure user has enough tokens
-        if (Number(userTokenAccount.amount) < amount * 10 ** 6) {
+        if (Number(userTokenAccount.amount) < amount * 10 ** 5) {
             throw new Error("❌ Insufficient token balance.");
         }
 
@@ -56,7 +59,7 @@ export async function transferToTreasury(
             userTokenAccount.address,
             treasuryTokenAccount.address,
             userWallet.publicKey,
-            amount * 10 ** 6 // Adjust for token decimals (assuming 6 decimals)
+            amount * 10 ** 5 // Adjust for token decimals (assuming 6 decimals)
         );
 
         // Create transaction

@@ -21,7 +21,6 @@ import { useAppSelector } from '../../store'
 import { PublicAPI } from '../API/api';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 import { activateUser, clearUser } from '../../Redux/userSlice';
 import { setLoading } from '../../Redux/alertBackdropSlice';
 
@@ -31,7 +30,6 @@ const SwapchainNavbar: React.FC = () => {
 
     const user = useAppSelector(state => state.user)
 
-    const location = useLocation()
 
     const dispatch = useDispatch()
 

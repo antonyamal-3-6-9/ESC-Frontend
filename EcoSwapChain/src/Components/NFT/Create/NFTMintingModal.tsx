@@ -28,6 +28,7 @@ import { decryptAndTransfer } from '../../../BlockChain/main';
 import { setAlertMessage, setAlertOn, setAlertSeverity } from '../../../Redux/alertBackdropSlice';
 import { useDispatch } from 'react-redux';
 import { Link } from 'react-router';
+import { decryptAndMintNFT } from '../../../BlockChain/main';
 
 
 interface NFTMintingModalProps {
@@ -264,10 +265,11 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         }
     };
 
-    const mintNFT = async (txHash: string) => {
+
+    const getURI = async (txHash: string) => {
         console.log(nftData.id);
         try {
-            const mintResponse = await API.post('nfts/mint/', {
+            const mintResponse = await API.post('nfts/uri/', {
                 txHash: txHash,
                 id: nftData.id
             });
@@ -276,7 +278,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
             dispatch(setAlertMessage("✅ NFT successfully minted!"));
             dispatch(setAlertOn(true))
             dispatch(setAlertSeverity("success"))
-            return mintResponse.data.tx
+            return mintResponse.data.metadata
         } catch (error) {
             console.error("❌ NFT minting failed:", error);
             dispatch(setAlertMessage("Error: Failed to mint NFT. Please try again."));
@@ -311,27 +313,29 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
     // Update handleConfirm with proper synchronization
     const handleConfirm = async () => {
         if (password.length < 6) {
-            setError('Password must be at least 6 characters');
+            setError("Password must be at least 6 characters");
             return;
         }
 
-        try {
-            setIsProcessing(true);
-            setError(null);
-            setTransferFailed(false);
-            setMintingFailed(false);
+        setIsProcessing(true);
+        setError(null);
+        setTransferFailed(false);
+        setMintingFailed(false);
 
+        let responseData;
+        let txHash = "";
+        let metadata = null;
+        let tx = null;
+
+        try {
             // Phase 1: Initiate Fee Transfer (0-25%)
-            const responseData = await initiateFeeTransfer();
+            responseData = await initiateFeeTransfer();
             setTreasuryPublicKey(responseData.treasuryKey || "unknown_key");
 
             // Phase 2: Transaction Progress (25-75%)
             setActiveStep(3);
             simulateTransactionProgress();
 
-            let txHash: string;
-
-            // Perform Transfer
             try {
                 txHash = await decryptAndTransfer(
                     mintingFee,
@@ -341,86 +345,94 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                     password,
                     responseData.encKey
                 );
-                console.log("Transfer Transaction Hash:", txHash);
+                console.log("✅ Transfer Transaction Hash:", txHash);
             } catch (transferError) {
-                console.error("Transfer Error:", transferError);
-
-                // Stop execution here, no minting should start if transfer fails
-                dispatch(setAlertMessage(`Transfer failed: ${transferError instanceof Error ? transferError.message : "Unknown error"}`));
-                dispatch(setAlertOn(true));
-                dispatch(setAlertSeverity("error"));
-
-                // Set transfer failed step
-                setTransferFailed(true);
-                setActiveStep(6); // Use step index for Transfer Failed
-
-                // Clear intervals
-                if (txIntervalRef.current) clearInterval(txIntervalRef.current);
-                if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
-
-                setIsProcessing(false);
+                handleFailure("Transfer", transferError, setTransferFailed, 6);
                 return;
             }
 
-            // Force complete transaction progress
-            if (txIntervalRef.current) clearInterval(txIntervalRef.current);
+            clearInterval(txIntervalRef.current!);
             setTransactionProgress(100);
 
             // Phase 3: Minting Progress (75-100%)
             setActiveStep(4);
             simulateMintingProgress();
 
-            // Perform Minting
             try {
-                const tx = await mintNFT(txHash); // Use the txHash from the transfer
-                setNftBlkChainData(tx);
-                console.log("Minting Transaction:", tx);
+                metadata = await getURI(txHash);
             } catch (mintingError) {
-                console.error("Minting Error:", mintingError);
-
-                // Stop execution if minting fails
-                dispatch(setAlertMessage(`Minting failed: ${mintingError instanceof Error ? mintingError.message : "Unknown error"}`));
-                dispatch(setAlertOn(true));
-                dispatch(setAlertSeverity("error"));
-
-                // Set minting failed step
-                setMintingFailed(true);
-                setActiveStep(7); // Use step index for Minting Failed
-
-                // Clear intervals
-                if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
-
-                setIsProcessing(false);
+                handleFailure("Minting", mintingError, setMintingFailed, 7);
                 return;
             }
 
-            // Force complete minting progress
-            if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
-            setMintingProgress(100);
+            try {
+                tx = await decryptAndMintNFT(password, responseData.encKey, metadata);
+                console.log("✅ Minting Success:", tx);
+                setNftBlkChainData({
+                    txHash: tx.txHash,
+                    mintAddress: tx.mintAddress
+                })
+            } catch (mintingError) {
+                handleFailure("Minting", mintingError, setMintingFailed, 7);
+                return;
+            }
 
-            // Set to success step
+            try {
+                await API.post("nfts/mint/", {
+                    txHash: tx.txHash,
+                    id: nftData.id,
+                    address: tx.mintAddress
+                });
+            } catch (apiError) {
+                console.error("⚠️ NFT Mint Save Failed:", apiError);
+            }
+
+            clearInterval(mintIntervalRef.current!);
+            setMintingProgress(100);
             setActiveStep(5);
 
         } catch (err) {
-            // Clear all intervals on error
-            if (txIntervalRef.current) clearInterval(txIntervalRef.current);
-            if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
-
-            // Reset progress states
-            setTransactionProgress(0);
-            setMintingProgress(0);
-            setActiveStep(2);
-
-            // Error handling
-            console.error("❌ Transaction error:", err);
-            dispatch(setAlertMessage(`Error: ${err instanceof Error ? err.message : "Transaction failed."}`));
-            dispatch(setAlertOn(true));
-            dispatch(setAlertSeverity("error"));
+            handleGenericError(err);
         } finally {
             setIsProcessing(false);
         }
     };
-    // Generate a mock transaction hash for the success screen
+
+    // Helper Functions
+    const handleFailure = (
+        type: "Transfer" | "Minting",
+        error: unknown,
+        setFailureState: React.Dispatch<React.SetStateAction<boolean>>,
+        step: number
+    ) => {
+        console.error(`${type} Error:`, error);
+
+        dispatch(setAlertMessage(`${type} failed: ${error instanceof Error ? error.message : "Unknown error"}`));
+        dispatch(setAlertOn(true));
+        dispatch(setAlertSeverity("error"));
+
+        setFailureState(true);
+        setActiveStep(step);
+
+        clearInterval(txIntervalRef.current!);
+        clearInterval(mintIntervalRef.current!);
+        setIsProcessing(false);
+    };
+
+    const handleGenericError = (err: unknown) => {
+        clearInterval(txIntervalRef.current!);
+        clearInterval(mintIntervalRef.current!);
+
+        setTransactionProgress(0);
+        setMintingProgress(0);
+        setActiveStep(2);
+
+        console.error("❌ Transaction error:", err);
+        dispatch(setAlertMessage(`Error: ${err instanceof Error ? err.message : "Transaction failed."}`));
+        dispatch(setAlertOn(true));
+        dispatch(setAlertSeverity("error"));
+    };
+
 
     const deleteObject = async () => {
         try {
@@ -961,6 +973,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 p: 2,
+                height: '90%'
             }}
         >
             <Fade in={open}>

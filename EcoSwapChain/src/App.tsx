@@ -47,8 +47,8 @@ function App() {
   const location = useLocation()
 
   return (
-    <>{location.pathname.includes("/admin") ? <SwapchainNavbar /> : <Navbar />}
-
+    <>
+      {location.pathname.split("/")[1] === "admin" ? <SwapchainNavbar /> : <Navbar />}
       <RouteDisplayC />
       <CollapsibleAlert />
       <BackDrop />

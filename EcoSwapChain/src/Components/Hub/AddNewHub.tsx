@@ -73,6 +73,7 @@ const ShippingHubForm: React.FC = () => {
     const dispatch = useDispatch()
 
     const onSubmit = async () => {
+        console.log(hubData)
         dispatch(setLoading(true))
         try {
             await API.post("admin/hub/create/", hubData);

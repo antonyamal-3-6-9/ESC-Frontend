@@ -14,6 +14,7 @@ import {
     transactionBuilder
 } from "@metaplex-foundation/umi";
 import { transferV1 } from '@metaplex-foundation/mpl-token-metadata'
+import base58 from "bs58";
 
 export async function transferNFT(
     senderKeypair: Keypair,       // Sender's secret key (Uint8Array)
@@ -26,12 +27,12 @@ export async function transferNFT(
 
 
         const connection = new Connection(rpcUrl, "confirmed");
-        const umi = createUmi(connection.rpcEndpoint);
+        const umi = createUmi(connection.rpcEndpoint, {
+            commitment: "finalized"
+        });
         umi.use(mplTokenMetadata());
         const umiSender = umi.eddsa.createKeypairFromSecretKey(senderKeypair.secretKey);
         umi.use(keypairIdentity(umiSender));
-
-        const nftTransfer = generateSigner(umi);
 
         const mint = publicKey(mintAddress);
         const recipient = publicKey(recipientAddress)
@@ -43,8 +44,8 @@ export async function transferNFT(
         tx = tx.add(
             transferV1(umi, {
                 mint,
-                authority: nftTransfer,
-                tokenOwner: nftTransfer.publicKey,
+                authority: umi.identity,
+                tokenOwner: umiSender.publicKey,
                 destinationOwner: recipient,
                 tokenStandard: TokenStandard.NonFungible,
             })
@@ -52,10 +53,9 @@ export async function transferNFT(
 
         // ✅ Send and confirm the full transaction
         const { signature } = await tx.sendAndConfirm(umi);
-
         console.log(`✅ NFT transferred! Tx: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
-
-        return String(signature);
+        return base58.encode(signature);
+        
     } catch (error) {
         throw new Error(`NFT Transfer Failed: ${error}`);
     }

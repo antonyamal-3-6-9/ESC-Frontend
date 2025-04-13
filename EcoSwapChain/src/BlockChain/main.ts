@@ -3,18 +3,12 @@ import { getWallet } from "./Wallet/wallet";
 import { transferToTreasury } from "./Token/nftFeeTransfer";
 import { API } from "../Components/API/api";
 import { transferNFT } from "./NFT/transfer";
+import { mintNFT } from "./NFT/mint";
 
-interface DecryptData {
-    key: string;
-    encKey: string;
-}
-
-interface TransferData {
-    wallet: Keypair;
-    amount: number;
-    treasuryPublic: string;
-    rpcUrl: string;
-    mintAddress: string;
+interface Metadata {
+    name: string;
+    symbol: string;
+    uri: string;
 }
 
 /**
@@ -109,6 +103,50 @@ export async function decryptAndTransfer(
 }
 
 
+
+export async function decryptAndMintNFT(
+    key: string,
+    encKey: string,
+    metadata: Metadata
+) {
+
+    try {
+        // Step 1: Validate inputs
+        if (!key || !encKey) {
+            throw new Error("Missing encryption key or encrypted key.");
+        }
+
+        // Step 2: Decrypt the wallet
+        let wallet;
+        try {
+            wallet = await getWallet(encKey, key);
+            if (!wallet) {
+                throw new Error("Decrypted wallet is null.");
+            }
+        } catch (err) {
+            throw new Error(`Failed to decrypt wallet: ${err instanceof Error ? err.message : String(err)}`);
+        }
+
+        // Step 3: Transfer NFT
+        let txSignature;
+        try {
+            txSignature = await mintNFT(
+                wallet,
+                metadata
+            );
+        } catch (err) {
+            throw new Error(`NFT transfer failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+
+        // Step 4: Return the transaction signature
+        return txSignature;
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error during NFT transfer";
+        console.error("❌ decryptAndTransferNFT failed:", errorMessage);
+        throw new Error(`Transaction failed: ${errorMessage}`);
+    }
+}
 
 
 
@@ -206,8 +244,8 @@ export async function decryptAndTransferNFT(
         try {
             txSignature = await transferNFT(
                 wallet,
-                new PublicKey(recipientPublicKey),
-                new PublicKey(mintAddress),
+                recipientPublicKey,
+                mintAddress,
                 rpcUrl
             );
         } catch (err) {

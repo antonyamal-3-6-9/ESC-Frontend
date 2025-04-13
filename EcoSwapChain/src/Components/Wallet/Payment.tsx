@@ -42,7 +42,7 @@ interface PaymentModalProps {
     amount: number;
     coinAmount: number;
     currency?: string;
-    onPaymentComplete?: (tx: Transaction) => void;
+    onPaymentComplete?: () => void;
     walletAddress: string;
 }
 
@@ -454,7 +454,7 @@ const MockPaymentModal: React.FC<PaymentModalProps> = ({
 
             console.log(amount, walletAddress);
             try {
-                const { data } = await API.post("wallet/swapcoin/purchase/", {
+                await API.post("wallet/swapcoin/purchase/", {
                     amount: coinAmount,
                     user_wallet_address: walletAddress,
                 });
@@ -463,7 +463,7 @@ const MockPaymentModal: React.FC<PaymentModalProps> = ({
                 setActiveStep(2);
                 // Check if onPaymentComplete exists before calling it
                 if (onPaymentComplete) {
-                    onPaymentComplete(data.transactionData);
+                    onPaymentComplete();
                 }
                 onClose();
             } catch (error) {
@@ -664,7 +664,7 @@ export const SwapCoinPurchaseButton: React.FC<{
     coinConversionRate?: number;
     buttonName?: string;
     clicked?: boolean;
-    onPurchaseComplete?: (coinAmount: number, tx: Transaction) => void;
+    onPurchaseComplete?: (coinAmount: number) => void;
     walletAddress: string;
 }> = ({
     coinConversionRate = 0.1,
@@ -699,9 +699,9 @@ export const SwapCoinPurchaseButton: React.FC<{
             setIsPaymentModalOpen(true);
         };
 
-        const handlePaymentComplete = (tx: Transaction) => {
+        const handlePaymentComplete = () => {
             if (onPurchaseComplete) {
-                onPurchaseComplete(coinAmount, tx);
+                onPurchaseComplete(coinAmount);
             }
         };
 

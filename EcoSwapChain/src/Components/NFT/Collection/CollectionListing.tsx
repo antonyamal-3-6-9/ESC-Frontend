@@ -157,6 +157,9 @@ const NFTCollection: React.FC = () => {
     } catch (error) {
       console.log(error)
     }
+    finally {
+      dispatch(setLoading(false))
+    }
   }
 
   const handleCopyURI = (uri: string) => {

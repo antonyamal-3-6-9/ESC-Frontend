@@ -3,7 +3,8 @@ import {
     TextField,
     Box,
     Grid,
-    Button
+    Button,
+    Container
 } from '@mui/material';
 import { API } from '../API/api';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +18,7 @@ interface Address {
     country: string;
     landmark: string;
     district: string;
+    default: boolean;
 }
 
 const emptyAddress: Address = {
@@ -27,7 +29,8 @@ const emptyAddress: Address = {
     postal_code: '',
     country: '',
     landmark: '',
-    district: ''
+    district: '',
+    default: true
 };
 
 const AddressForm: React.FC = () => {
@@ -74,7 +77,9 @@ const AddressForm: React.FC = () => {
         }
 
         try {
-            const response = await API.post('order/create/address/', address);
+            const response = await API.post('order/address/create/', {
+                address: address
+            });
             console.log('Address submitted successfully:', response.data);
             navigate("/")
 
@@ -84,9 +89,9 @@ const AddressForm: React.FC = () => {
     };
 
     return (
-        <Box sx={{ p: 4, bgcolor: 'background.default' }}>
-            <h5 style={{textAlign: 'center'}}>Submit Address</h5>
-            <h6 style={{ textAlign: 'center' }}>Please fill in the following details to submit your address.</h6>
+        <Container sx={{ p: 4, bgcolor: 'background.default' }}>
+            <h1 style={{textAlign: 'center'}}>Add Address</h1>
+            <h3 style={{ textAlign: 'center' }}>Please fill in the following details to add your address.</h3>
             <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid item xs={12} sm={6}>
                     <TextField
@@ -195,7 +200,7 @@ const AddressForm: React.FC = () => {
                     </Button>
                 </Grid>
             </Grid>
-        </Box>
+        </Container>
     );
 };
 

@@ -18,8 +18,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { API } from '../API/api';
 import { setAlertMessage, setAlertOn, setAlertSeverity } from '../../Redux/alertBackdropSlice';
 import { useDispatch } from 'react-redux';
-import { NFTTransaction } from '../NFT/NFTDetails';
-import { set } from 'date-fns';
+import { decryptAndTransferNFT } from '../../BlockChain/main';
 
 // Enum to track modal steps
 enum TransferStep {
@@ -31,15 +30,18 @@ enum TransferStep {
 }
 
 interface TransferOwnershipModalProps {
-    onTransferComplete: (data: NFTTransaction) => void;
+    onTransferComplete: (tx: string) => void;
     entityName?: string;
     orderId: string;
+    buyerAddress: string;
+    mintAddress: string;
 }
 
 const TransferOwnershipModal: React.FC<TransferOwnershipModalProps> = ({
     onTransferComplete,
     entityName = "this asset",
-    orderId
+    buyerAddress,
+    mintAddress,
 }) => {
     // State
     const [open, setOpen] = useState<boolean>(false);
@@ -101,17 +103,19 @@ const TransferOwnershipModal: React.FC<TransferOwnershipModalProps> = ({
             setCurrentStep(TransferStep.PROCESSING);
 
             // Step 3: Initiate fee transfer and decrypt wallet
-            await initiateFeeTransfer();
+            const init = await initiateFeeTransfer();
+
+
             try {
-                  const { data } = await API.post('nfts/transfer/', {
-                    orderId: orderId
-                  })
-                onTransferComplete(data.transactionData)
+                const tx = await decryptAndTransferNFT(buyerAddress,
+                    init.rpcUrl, mintAddress, password, init.encKey
+                );
                 setCurrentStep(TransferStep.SUCCESS);
-                } catch (error) {
-                    console.log(error)
-                    setCurrentStep(TransferStep.FAILURE); 
-                }
+                onTransferComplete(tx)
+            } catch (error) {
+                console.log(error)
+                setCurrentStep(TransferStep.FAILURE);
+            }
         } catch (error) {
             console.error("❌ Transfer failed:", error);
             setCurrentStep(TransferStep.FAILURE);

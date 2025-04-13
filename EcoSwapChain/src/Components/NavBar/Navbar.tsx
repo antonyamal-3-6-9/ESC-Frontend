@@ -8,7 +8,6 @@ import { PublicAPI } from '../API/api'
 import { activateUser, clearUser } from '../../Redux/userSlice'
 import { useNavigate } from 'react-router'
 import { setLoading } from '../../Redux/alertBackdropSlice'
-import { useEffect } from 'react'
 
 
 const Navbar = () => {
@@ -19,11 +18,6 @@ const Navbar = () => {
   const handleWallet = () => {
     dispatch(triggerWallet())
   }
-
-  useEffect(() => {
-    // Force DOM reflow or rerender side-effect
-    window.dispatchEvent(new Event('resize'));
-  }, [user.active]);
 
 
   const handleLogout = async () => {

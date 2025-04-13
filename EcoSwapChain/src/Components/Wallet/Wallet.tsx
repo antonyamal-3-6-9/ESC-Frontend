@@ -30,9 +30,8 @@ import { Theme } from '@mui/material/styles'
 import { API } from '../API/api'
 import Logo from "../logos/svg/logo-color.svg"
 import { SwapCoinPurchaseButton } from './Payment'
-import { setLoading } from '../../Redux/alertBackdropSlice'
 import { useDispatch } from 'react-redux'
-
+import { setAlertMessage, setAlertOn, setLoading, setAlertSeverity } from '../../Redux/alertBackdropSlice'
 declare module '@mui/material/styles' {
   interface Palette {
     accent: Palette['primary']
@@ -160,6 +159,57 @@ const Wallet: React.FC = () => {
     getWalletData()
   }, [])
 
+useEffect(() => {
+  if (!walletData.public_key) return; // Don't connect until public_key is available
+
+  const socketUrl = `ws://127.0.0.1:8000/ws/transaction/${walletData.public_key}/`;
+  const socket = new WebSocket(socketUrl);
+
+  socket.onopen = () => {
+    console.log("Transaction Socket connection established");
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log("Transaction Socket message received:", data);
+
+      if (data.type === "transaction" && data.transactionData) {
+        const tx = data.transactionData;
+        const amount = Number(tx.amount) || 0;
+
+        if (tx.transaction_type === "BUY" || tx.transaction_type === "REWARD") {
+          setWalletData((prev) => ({
+            ...prev,
+            balance: Number(prev.balance)  + amount,
+            recieved_transaction: [...prev.recieved_transaction, tx],
+          }));
+        } else {
+          setWalletData((prev) => ({
+            ...prev,
+            balance: prev.balance - amount,
+            sent_transaction: [...prev.sent_transaction, tx],
+          }));
+        }
+      } else {
+        console.warn("Unexpected transaction socket format:", data);
+      }
+    } catch (err) {
+      console.error("Error handling WebSocket transaction message:", err);
+    }
+  };
+
+
+  socket.onerror = (error) => {
+    console.log("Transaction Socket error:", error);
+  };
+
+  return () => {
+    socket.close();
+  };
+}, [walletData.public_key]);
+
+
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false)
   const [clicked, setClicked] = useState<boolean>(false)
 
@@ -184,14 +234,11 @@ const Wallet: React.FC = () => {
     setTabValue(newValue);
   };
 
-  const handlePurchaseComplete = (coinAmount: number, tx: Transaction) => {
-    console.log(Number(walletData.balance), coinAmount)
-    const total = Number(walletData.balance) + coinAmount;
-    setWalletData(prevData => ({
-      ...prevData,
-      balance: total,
-      recieved_transaction: [tx, ...prevData.recieved_transaction]
-    }))
+  const handlePurchaseComplete = (amount: number) => {
+    dispatch(setAlertOn(false))
+    setTimeout(() => dispatch(setAlertOn(true)), 2000)
+    dispatch(setAlertMessage(`Your purchase of ${amount} SWAP is processing and will be completed shortly.`))
+    dispatch(setAlertSeverity('success'))
   }
 
   const getTransactionIcon = (transaction: Transaction) => {

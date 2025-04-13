@@ -29,6 +29,7 @@ import ReadOnlyMarkersMap from './HubConnectionMap';
 import { Link } from 'react-router';
 import { API } from '../API/api';
 import { GraphRef } from './HubConnectionMap';
+import { get } from 'http';
 
 // Define TypeScript interfaces
 export interface Hub {
@@ -98,6 +99,8 @@ export default function HubManagementDashboard(): JSX.Element {
     const [addMode, setAddMode] = useState<boolean>(false);
     const [deleteMode, setDeleteMode] = useState<boolean>(false);
 
+    const [onFilter, setOnFilter] = useState<boolean>(false);
+
 
     // Generate unique values for filter options
     const districts: string[] = getUniqueValues(hubs, 'district');
@@ -149,6 +152,7 @@ export default function HubManagementDashboard(): JSX.Element {
     }, [filters]);
 
     const handleFilterChange = (event: SelectChangeEvent): void => {
+        setOnFilter(true)
         const { name, value } = event.target;
         setFilters(prevFilters => ({
             ...prevFilters,
@@ -157,6 +161,7 @@ export default function HubManagementDashboard(): JSX.Element {
     };
 
     const resetFilters = (): void => {
+        setOnFilter(false)
         setFilters({
             district: '',
             state: '',

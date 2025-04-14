@@ -7,7 +7,7 @@ import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import { API } from "../API/api";
 import { Button } from "@mui/material";
 import { LeafletMouseEvent } from "leaflet";
-import React from "react";
+
 
 export interface GraphRef{
     clearAddPath: () => void;
@@ -15,13 +15,13 @@ export interface GraphRef{
     handleRouteOptimization: () => void;
 }
 
-interface Node {
+export interface Node {
     id: number;
     position: [number, number];
     title: string;
 }
 
-interface Edge {
+export interface Edge {
     id: number;
     fromNode: Node;
     to: Node;
@@ -206,7 +206,17 @@ const GraphMap = forwardRef<GraphRef, GraphMapProps>(({
                     const { data } = await API.get("admin/route/optimize/");
                     console.log(data.data.path)
                     const edges: Edge[] = []
-                    data.data.path.map((path) => {
+                    data.data.path.map((path: {
+                        route:
+                        {
+                            id: number;
+                            fromNode:{ id: number; position: [number, number]; title: string; };
+                            to: { id: number; position: [number, number]; title: string; }; 
+                            distance: number;
+                            time: string;
+                            cost: number;
+                        };
+                    }) => {
                         edges.push({
                             id: path.route.id,
                             fromNode: {
@@ -244,7 +254,7 @@ const GraphMap = forwardRef<GraphRef, GraphMapProps>(({
                     icon={customIcon}
                     eventHandlers={{ click: () => handleNodeClick(node) }}
                 >
-                    <Popup>{node.title}</Popup>
+                    <Popup>{node.title}{ node.id}</Popup>
                 </Marker>
             ))}
             {edges.map((edge, index) => (

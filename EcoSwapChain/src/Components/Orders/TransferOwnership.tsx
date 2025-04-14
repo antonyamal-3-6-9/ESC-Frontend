@@ -297,6 +297,9 @@ const TransferOwnershipModal: React.FC<TransferOwnershipModalProps> = ({
                 variant="contained"
                 color="primary"
                 onClick={handleOpen}
+                sx={{
+                    ml: 1,
+                }}
             >
                 Transfer Ownership
             </Button>

@@ -62,8 +62,7 @@ import { NFTTransaction } from '../NFT/NFTDetails';
 import { setTimeout } from 'timers';
 import { Node, Edge } from '../Hub/HubConnectionMap';
 import TrackingModal from './Tracking';
-import { set } from 'date-fns';
-
+import ConfirmationModalDemo from './VerificationConfirmationModal';
 
 
 // Types for our component
@@ -95,6 +94,7 @@ interface ShippingDetails {
   sourceHub: Hub;
   destinationHub: Hub;
   shippingRoutes: Edge[];
+  verificationStatus: 'approved' | 'rejected' | 'pending';
 }
 
 
@@ -198,7 +198,8 @@ const NFTOrderDetails: React.FC = () => {
       shippingMethod: "",
       sourceHub: {} as Hub,
       destinationHub: {} as Hub,
-      shippingRoutes: []
+      shippingRoutes: [],
+      verificationStatus: 'pending'
     },
     escrowTransaction: {} as Transaction,
     ownershipTransferTransaction: {} as NFTTransaction,
@@ -283,7 +284,8 @@ const NFTOrderDetails: React.FC = () => {
     fetchMessages();
   }, []);
 
-  useEffect(() => {
+
+  const handleRoutes = () => {
     const routes = orderData.shippingDetails.shippingRoutes;
 
     // Prevent duplicate insertion of initial/final edges
@@ -346,18 +348,7 @@ const NFTOrderDetails: React.FC = () => {
         },
       }));
     }
-  }, [
-    orderData.shippingDetails.shippingRoutes,
-    orderData.shippingDetails.sourceHub.id,
-    orderData.shippingDetails.destinationHub.id,
-    orderData.shippingDetails.seller_address.latitude,
-    orderData.shippingDetails.seller_address.longitude,
-    orderData.shippingDetails.buyer_address.latitude,
-    orderData.shippingDetails.buyer_address.longitude,
-    orderData.shippingDetails.seller_address.city,
-    orderData.shippingDetails.buyer_address.city,
-  ]);
-
+  }
 
 
   useEffect(() => {
@@ -406,6 +397,7 @@ const NFTOrderDetails: React.FC = () => {
       } else if (data.type === "order_update") {
         setOrderData((prev) => ({
           ...prev,
+          orderStatus: data.shippingMethod === "self" ? "confirmed" : "processing",
           shippingDetails: {
             ...prev.shippingDetails,
             shippingMethod: data.shippingMethod === "self" ? "self" : "swap",
@@ -413,6 +405,17 @@ const NFTOrderDetails: React.FC = () => {
             destinationHub: data.shippingMethod === "swap" ? data.destinationHub : null,
             trackingNumber: data.shippingMethod === "swap" ? data.trackingNumber : null,
           },
+        }));
+
+      } else if (data.type === "shipping_update") {
+        setOrderData((prev) => ({
+          ...prev,
+          orderStatus: "confirmed",
+          shippingDetails: {
+            ...prev.shippingDetails,
+            shippingMethod: data.method,
+            shippingRoutes: data.method === "swap" ? data.routes : prev.shippingDetails.shippingRoutes,
+          }
         }));
       } else if (data.type === "ownership_transfer") {
         setOrderData((prev) => ({
@@ -422,7 +425,7 @@ const NFTOrderDetails: React.FC = () => {
             ...prev.escrowTransaction,
             transactionHash: data.transaction_hash,
             status: data.status,
-            timeStamp: data.timestamp,
+            timeStamp: Date.now(), // Fixed here
           },
         }));
       } else if (data.type === "nft_transfer") {
@@ -506,6 +509,14 @@ const NFTOrderDetails: React.FC = () => {
     }
   };
 
+  const getConfirmationStatusColor = () => {
+    switch (orderData.shippingDetails.verificationStatus) {
+      case 'pending': return theme.palette.warning.main; // Waiting for confirmation
+      case 'approved': return theme.palette.success.main; // Order confirmed by seller
+      case 'rejected': return theme.palette.error.main; // Order was canceled
+      default: return theme.palette.grey[500]; // Default/fallback color
+    }
+  };
 
   // Payment status color mapping
   const getPaymentStatusColor = () => {
@@ -580,27 +591,67 @@ const NFTOrderDetails: React.FC = () => {
   }
 
 
-
-  const findPath = async () => {
+  const handleShippingMethodSubmit = async (method: string) => {
     try {
       const response = await API.post('order/shipping/shortest/', {
-        orderId: orderData.orderId
+        orderId: orderData.orderId,
+        method: method
       })
-      console.log(response.data)
+
+      if (method === "swap") {
+
+        setOrderData((prev) => ({
+          ...prev,
+          shippingDetails: {
+            ...prev.shippingDetails,
+            shippingMethod: method,
+            shippingRoutes: response.data.routes
+          }
+        }))
+      } else {
+        setOrderData((prev) => ({
+          ...prev,
+          shippingDetails: {
+            ...prev.shippingDetails,
+            shippingMethod: method
+          }
+        }))
+      }
     } catch (error) {
       alert(error)
     }
-  }
-
-  const handleShippingMethodSubmit = (method: string) => {
-    alert(method)
   };
 
 
   const [trackingOpen, setTrackingOpen] = useState(false);
 
   const handleTrackingModal = () => {
-    setTrackingOpen(!trackingOpen);
+    if (!trackingOpen) {
+      handleRoutes();
+      setTrackingOpen(true);
+    } else {
+      setTrackingOpen(false);
+    }
+
+  }
+
+
+  const handleVerification = async (isValid: boolean) => {
+    try {
+      await API.post('hub/product/verify/', {
+        orderId: orderData.orderId,
+        verificationStatus: isValid ? "approved" : "rejected",
+      });
+      setOrderData((prev) => ({
+        ...prev,
+        shippingDetails: {
+          ...prev.shippingDetails,
+          verificationStatus: isValid ? "approved" : "rejected"
+        }
+      }))
+    } catch (error) {
+      console.error(error)
+    }
   }
 
 
@@ -1094,6 +1145,22 @@ const NFTOrderDetails: React.FC = () => {
                         fontWeight: 'bold'
                       }}
                     />
+
+
+                  </Box>
+
+                  <Box>
+                    <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                      <TrackChangesIcon fontSize="small" sx={{ mr: 0.5 }} /> Verification Status
+                    </Typography>
+                    <Chip
+                      label={String(orderData.shippingDetails.verificationStatus).toUpperCase()}
+                      sx={{
+                        bgcolor: getConfirmationStatusColor(),
+                        color: '#fff',
+                        fontWeight: 'bold'
+                      }}
+                    />
                   </Box>
 
                   <Box>
@@ -1108,28 +1175,32 @@ const NFTOrderDetails: React.FC = () => {
                         fontWeight: 'bold'
                       }}
                     />
+                    {orderData.shippingDetails.verificationStatus === "approved" &&
+                      <>
+                        {(orderData.ownerId !== userId) &&
+                          (orderData.paymentStatus === "unpaid")
+                          && (orderData.orderStatus !== "pending"
+                            && orderData.orderStatus !== "processing")
 
-                    {(orderData.ownerId !== userId) &&
-                      (orderData.paymentStatus === "unpaid")
-                      && (orderData.orderStatus !== "pending")
-
-                      ? <Payment
-                        amount={Number(orderData.price) / 2}
-                        walletAddress={orderData.buyerAddress}
-                        onComplete={onComplete}
-                      /> : (orderData.ownerId === userId) &&
-                        (orderData.paymentStatus === "escrow")
-                        && (orderData.orderStatus !== "pending") &&
-                        (orderData.ownershipTransferStatus === "pending")
-                        ?
-                        <TransferOwnershipModal
-                          entityName={orderData.nftName}
-                          onTransferComplete={onNFTTransferComplete}
-                          orderId={orderData.orderId}
-                          buyerAddress={orderData.buyerAddress}
-                          mintAddress={orderData.nftAddress}
-                        />
-                        : null}
+                          ? <Payment
+                            amount={Number(orderData.price) / 2}
+                            walletAddress={orderData.buyerAddress}
+                            onComplete={onComplete}
+                          /> : (orderData.ownerId === userId) &&
+                            (orderData.paymentStatus === "escrow")
+                            && (orderData.orderStatus !== "pending") &&
+                            (orderData.ownershipTransferStatus === "pending")
+                            ?
+                            <TransferOwnershipModal
+                              entityName={orderData.nftName}
+                              onTransferComplete={onNFTTransferComplete}
+                              orderId={orderData.orderId}
+                              buyerAddress={orderData.buyerAddress}
+                              mintAddress={orderData.nftAddress}
+                            />
+                            : null}
+                      </>
+                    }
                   </Box>
                 </Box>
 
@@ -1159,31 +1230,58 @@ const NFTOrderDetails: React.FC = () => {
                   <Box sx={{ mt: 2 }}>
 
                     {/* ESCROW / PAYMENT STATUS MESSAGES */}
-                    {orderData.ownerId !== userId && orderData.paymentStatus === "unpaid" && orderData.orderStatus !== "pending" && (
+
+                    {orderData.shippingDetails.verificationStatus === "pending" ? <>
                       <Typography>
-                        Once the payment is made, it will be held in escrow until the ownership is transferred.
+                        Once the verification is complete the payment can be made and the ownership can be transfered respectively
                       </Typography>
+                    </> : orderData.shippingDetails.verificationStatus === "approved" ? <>
+                      <Typography>
+                        Product has been successfully verified and the payment can be made and the ownership can be transfered respectively
+                      </Typography>
+                    </> : null}
+
+
+                    {orderData.shippingDetails.verificationStatus === "approved" && (
+                      <>
+                        {orderData.paymentStatus === "unpaid" && orderData.orderStatus !== "pending" && (
+                          <Typography>
+                            Once the payment is made, it will be held in escrow until the ownership is transferred.
+                          </Typography>
+                        )}
+                        {orderData.ownerId === userId &&
+                          orderData.paymentStatus === "escrow" &&
+                          orderData.ownershipTransferStatus === "pending" && (
+                            <Typography>
+                              Payment from the buyer is held in escrow and will be credited to your wallet when the ownership transfer is completed.
+                            </Typography>
+                          )}
+                      </>
                     )}
 
-                    {orderData.ownerId === userId && orderData.paymentStatus === "escrow" && orderData.ownershipTransferStatus === "pending" && (
-                      <Typography>
-                        Payment from the buyer is held in escrow and will be credited to your wallet when the ownership transfer is completed.
-                      </Typography>
-                    )}
+
+
 
                     {orderData.ownerId !== userId && orderData.paymentStatus === "escrow" && orderData.ownershipTransferStatus === "pending" && (
                       <>
-                        <Typography>Your payment is safe and held in escrow.</Typography>
-                        <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
-                          <Tooltip title={orderData.escrowTransaction.transaction_hash}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleCopy(orderData.escrowTransaction.transaction_hash, 'transactionHash')}
-                            >
-                              <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Typography>
+                          <Typography>Your payment is safe and held in escrow.</Typography>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="body2" color="text.secondary">
+                              Payment Transaction Hash:
+                            </Typography>
+                            <Typography variant="body2">
+                              {orderData.escrowTransaction.transaction_hash?.slice(0, 8)}...
+                              {orderData.escrowTransaction.transaction_hash?.slice(-4)}
+                            </Typography>
+                            <Tooltip title={orderData.escrowTransaction.transaction_hash || 'No hash available'}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCopy(orderData.escrowTransaction.transaction_hash, 'transactionHash')}
+                              >
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
                       </>
                     )}
 
@@ -1200,10 +1298,10 @@ const NFTOrderDetails: React.FC = () => {
                     )}
 
                     {/* SELECT SHIPPING METHOD IF NOT ALREADY SET */}
-                    {orderData.shippingDetails.shippingMethod === "swap"
-                      && orderData.orderStatus === "pending"
-                      && orderData.ownerId !== userId
-                      && (
+                    {(orderData.shippingDetails.shippingMethod === "swap"
+                      && orderData.orderStatus === "processing"
+                      && orderData.ownerId !== userId)
+                      ? (
                         <FormControl component="fieldset" sx={{ mt: 3, p: 3, borderRadius: 2, boxShadow: 3, backgroundColor: '#f9f9f9' }}>
                           <Typography variant="h6" gutterBottom>
                             Swap Shipping (Platform-based) is available with product verification.
@@ -1230,42 +1328,29 @@ const NFTOrderDetails: React.FC = () => {
                             Submit
                           </Button>
                         </FormControl>
-                      )}
+                      ) : (orderData.shippingDetails.shippingMethod === "swap"
+                        && orderData.orderStatus === "processing"
+                        && orderData.ownerId === userId
+                      ) ? (<>
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body1" fontWeight="medium" component="span" sx={{ ml: 1 }}>
+                            Swap Shipping (Platform-based) is available. waiting for confirmation from buyer.
+                          </Typography>
+                        </Box>
+                      </>) : null}
+
+                    {(orderData.ownerId !== userId &&
+                      orderData.shippingDetails.shippingMethod === "self" &&
+                      orderData.shippingDetails.verificationStatus === "pending"
+                    ) && <Box>
+                        <ConfirmationModalDemo
+                          handleVerification={handleVerification}
+                        />
+                      </Box>}
 
                     {/* SHIPPING DETAILS */}
-                    {orderData.shippingDetails.shippingMethod && (
+                    {(orderData.shippingDetails.shippingMethod && orderData.orderStatus === "confirmed") && (
                       <>
-                        {orderData.shippingDetails.shippingMethod === "swap" && (
-                          <>
-                            <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center', mt: 3 }}>
-                              <TrackChangesIcon fontSize="small" sx={{ mr: 0.5 }} /> Tracking Number
-                            </Typography>
-
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                              <Typography variant="body2" fontFamily="monospace" sx={{ mr: 1 }}>
-                                {orderData.shippingDetails.trackingNumber}
-                              </Typography>
-                              <Tooltip title={copied === 'tracking' ? 'Copied!' : 'Copy Tracking'} slots={{ transition: Zoom }}>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleCopy(orderData.shippingDetails.trackingNumber || '', 'tracking')}
-                                >
-                                  {copied === 'tracking' ? (
-                                    <CheckIcon fontSize="small" color="success" />
-                                  ) : (
-                                    <ContentCopyIcon fontSize="small" />
-                                  )}
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-
-                            <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-                              <Button onClick={findPath} variant="outlined">Find Shortest Path</Button>
-                              <Button onClick={handleTrackingModal} variant="outlined">View Shipping Routes</Button>
-                            </Stack>
-                          </>
-                        )}
-
                         <Box sx={{ mt: 1 }}>
                           <Typography variant="body2" color="text.secondary" component="span">
                             Shipping Method:
@@ -1273,6 +1358,17 @@ const NFTOrderDetails: React.FC = () => {
                           <Typography variant="body1" fontWeight="medium" component="span" sx={{ ml: 1 }}>
                             {String(orderData.shippingDetails.shippingMethod).toUpperCase()}
                           </Typography>
+                          {orderData.shippingDetails.shippingMethod === "swap" && <>
+
+                            <Button
+                              sx={{ ml: 1 }}
+                              variant='outlined'
+                              onClick={handleTrackingModal}
+                            >
+                              View shipping Routes
+                            </Button>
+
+                          </>}
                         </Box>
                       </>
                     )}
@@ -1328,11 +1424,11 @@ const NFTOrderDetails: React.FC = () => {
 
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
                           <Typography variant="body2">
-                            {orderData.shippingDetails.sourceHub.district}
+                            {orderData.shippingDetails.sourceHub.pincode || '-'}
                           </Typography>
                           <ArrowForwardIcon fontSize="small" />
                           <Typography variant="body2">
-                            {orderData.shippingDetails.destinationHub.district}
+                            {orderData.shippingDetails.destinationHub.pincode || '-'}
                           </Typography>
                         </Stack>
                       </Box>

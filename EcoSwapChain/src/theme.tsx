@@ -30,27 +30,27 @@ declare module '@mui/material/styles' {
 
 export const SwapTheme = createTheme({
   palette: {
-    primary: { 
+    primary: {
       main: '#4DA1A9',
       light: '#7FC4C9',
       dark: '#2B8188',
-      contrastText: '#F6F4F0' 
+      contrastText: '#F6F4F0'
     },
-    secondary: { 
+    secondary: {
       main: '#2E5077',
       light: '#5A7BA3',
       dark: '#1A334D',
-      contrastText: '#F6F4F0' 
+      contrastText: '#F6F4F0'
     },
-    background: { 
+    background: {
       default: '#F6F4F0',
-      paper: '#FFFFFF' 
+      paper: '#FFFFFF'
     },
-    accent: { 
+    accent: {
       main: '#79D7BE',
       light: '#A5E6D3',
       dark: '#4DBA9E',
-      contrastText: '#2E5077' 
+      contrastText: '#2E5077'
     },
     surface: {
       main: '#FFFFFF',
@@ -101,7 +101,7 @@ export const SwapTheme = createTheme({
     '0 4px 16px rgba(46, 80, 119, 0.15)',
     '0 8px 24px rgba(46, 80, 119, 0.2)',
     ...Array(21).fill('none') // Extend array to meet MUI's 25-shadow requirement
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ] as any,
   components: {
     MuiButton: {

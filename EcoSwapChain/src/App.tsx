@@ -18,6 +18,7 @@ import ProfileCard from './Components/Profile/ProfileCard'
 import LandingPageThree from './Components/LandingPage/L3'
 import SwapchainNavbar from './Components/Admin/AdminNavbar'
 import AddressForm from './Components/Address/AddressForm'
+import SwapShippingVerification from './Components/ShippingPartner/ShippingPartner'
 
 import HubManagementDashboard from './Components/Hub/Hub'
 
@@ -29,6 +30,8 @@ import CollapsibleAlert from './Components/Alert/Alert'
 import RouteDisplayC from './Components/RouteDisplay'
 
 import NFTAdminDashboard from './Components/Admin/Home'
+
+import HubManagerLogin from './Components/ShippingPartner/PartnerLogin'
 
 
 
@@ -48,8 +51,9 @@ function App() {
 
   return (
     <>
-      {location.pathname.split("/")[1] === "admin" ? <SwapchainNavbar /> : <Navbar />}
-      <RouteDisplayC />
+      {location.pathname.split("/")[1] !== "shipping" && ( location.pathname.split("/")[1] === "admin" ? <SwapchainNavbar /> : <Navbar /> )}
+      
+      {location.pathname.split("/")[3] !== "login" && <RouteDisplayC />}
       <CollapsibleAlert />
       <BackDrop />
       <Routes>
@@ -78,7 +82,10 @@ function App() {
         <Route path="/admin/hub/manage/" element={<HubManagementDashboard />} />
         <Route path='/admin/hub/add/' element={<ShippingHubForm />} />
 
-        <Route path="/trader/address/create"  element={<AddressForm />} />
+        <Route path="/trader/address/create" element={<AddressForm />} />
+        
+        <Route path='/shipping/hub/login/' element={<HubManagerLogin />} />
+        <Route path='/shipping/verify/' element={<SwapShippingVerification />} />
 
       </Routes>
       <WalletModal/>

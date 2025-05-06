@@ -277,7 +277,7 @@ useEffect(() => {
                             : transaction.transaction_type === "FEE"
                               ? "Fee"
                               : transaction.transaction_type === "SELL"
-                                ? "Sell"
+                                ? transaction.transfered_from === walletData.public_key ? "Purchase" : "Sell"
                                 : transaction.transaction_type === "BUY"
                                   ? "Buy"
                                   : transaction.transfered_from === walletData.public_key

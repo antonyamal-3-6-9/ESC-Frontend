@@ -100,6 +100,7 @@ interface Product {
   destructible: boolean;
   hazardous: boolean;
   additionalImages: ProductImage[];
+  sustainabilityScore: number;
 }
 
 interface NFTDetails {
@@ -120,6 +121,8 @@ interface NFTDetails {
   traderId: number;
   product: Product;
   ownershipHistory: NFTTransaction[];
+  totalOwners: number;
+  reward: number;
 }
 
 // Styled Components
@@ -227,6 +230,8 @@ const ProductDetailPage: React.FC = () => {
     status: false,
     traderId: 0,
     ownershipHistory: [],
+    totalOwners: 0,
+    reward: 0,
     product: {
       id: 0,
       rootCategory: "",
@@ -249,6 +254,7 @@ const ProductDetailPage: React.FC = () => {
       destructible: false,
       hazardous: false,
       additionalImages: [],
+      sustainabilityScore: 0,
     },
   });
 
@@ -440,7 +446,7 @@ const ProductDetailPage: React.FC = () => {
                     <ListItem>
                       <ListItemIcon><Person color="primary" /></ListItemIcon>
                       <ListItemText
-                        primary="Owner"
+                        primary="Current Owner"
                         secondary={
                           <Tooltip title={nftData.ownerPublicKey}>
                             <Typography variant="body2">{truncateAddress(nftData.ownerPublicKey)}</Typography>
@@ -455,6 +461,28 @@ const ProductDetailPage: React.FC = () => {
                         secondary={formatDate(nftData.createdAt)}
                       />
                     </ListItem>
+                    <ListItem>
+                      <ListItemIcon><CalendarMonth color="primary" /></ListItemIcon>
+                      <ListItemText
+                        primary="Sustainibility Score"
+                        secondary={nftData.product.sustainabilityScore}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon><CalendarMonth color="primary" /></ListItemIcon>
+                      <ListItemText
+                        primary="Total Owners"
+                        secondary={nftData.totalOwners}
+                      />
+                    </ListItem>
+                    {nftData.traderId === userData.id &&
+                      <ListItem>
+                        <ListItemIcon><CalendarMonth color="primary" /></ListItemIcon>
+                        <ListItemText
+                          primary="Reward"
+                          secondary={nftData.reward}
+                        />
+                      </ListItem>}
                   </List>
 
                 </NFTInfoCard>

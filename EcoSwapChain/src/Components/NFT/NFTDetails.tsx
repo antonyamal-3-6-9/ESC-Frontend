@@ -465,7 +465,7 @@ const ProductDetailPage: React.FC = () => {
                       <ListItemIcon><CalendarMonth color="primary" /></ListItemIcon>
                       <ListItemText
                         primary="Sustainibility Score"
-                        secondary={nftData.product.sustainabilityScore}
+                        secondary={nftData.product.sustainabilityScore.toFixed(2)}
                       />
                     </ListItem>
                     <ListItem>

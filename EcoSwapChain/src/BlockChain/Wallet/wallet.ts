@@ -114,6 +114,7 @@ export async function getWallet(encryptedPrivateKey: string, encKey: string): Pr
     }
 }
 
+
 // 🏦 Check token balance of a wallet
 export async function checkTokenBalance(wallet: string, mintAddress: string, rpcUrl: string): Promise<TokenBalanceResponse> {
     const connection = new Connection(rpcUrl, "confirmed")

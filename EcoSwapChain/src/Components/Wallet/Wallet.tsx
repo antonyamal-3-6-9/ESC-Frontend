@@ -32,6 +32,7 @@ import Logo from "../logos/svg/logo-color.svg"
 import { SwapCoinPurchaseButton } from './Payment'
 import { useDispatch } from 'react-redux'
 import { setAlertMessage, setAlertOn, setLoading, setAlertSeverity } from '../../Redux/alertBackdropSlice'
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 declare module '@mui/material/styles' {
   interface Palette {
     accent: Palette['primary']
@@ -40,6 +41,9 @@ declare module '@mui/material/styles' {
     accent?: PaletteOptions['primary']
   }
 }
+
+
+const SOLANA_RPC_URL = 'https://api.devnet.solana.com';
 
 export interface Transaction {
   id?: number
@@ -135,24 +139,42 @@ const Wallet: React.FC = () => {
     recieved_transaction: [] as Transaction[]
   })
 
+  const [solanaBalance, setSolanaBalance] = useState<number>(0)
+
+
   const dispatch = useDispatch()
 
   const [tabValue, setTabValue] = useState<number>(0);
+
+
+  console.log("Wallet component rendered");
+
+  const getWalletBalance = async (publicKey: string) => {
+    try {
+      const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+      const pubKey = new PublicKey(publicKey);
+      const lamports = await connection.getBalance(pubKey);
+      const sol = lamports / LAMPORTS_PER_SOL;
+      setSolanaBalance(sol);
+    } catch (error) {
+      console.error('Failed to fetch balance:', error);
+    }
+  };
 
   async function getWalletData() {
     dispatch(setLoading(true))
     try {
       const response = await API.get('/wallet/retrieve/')
       console.log(response.data.wallet)
+      getWalletBalance(response.data.wallet.public_key)
       setWalletData(response.data.wallet)
     } catch (error) {
       console.log(error)
-    } finally { 
+    } finally {
       dispatch(setLoading(false))
     }
   }
 
-  console.log("Wallet component rendered");
 
 
   useEffect(() => {
@@ -403,21 +425,21 @@ useEffect(() => {
           </Box>
 
           <Grow in timeout={800}>
-            <Box sx={{display: "flex", gap: 3, justifyContent: "center", mt: 2}}>
-            <Button
-              variant='contained'
-              color='primary'
-              onClick={handleWithdrawClick}
-              sx={{
-                py: 1.5,
-                borderRadius: '12px',
-                transform: clicked ? 'scale(0.98)' : 'scale(1)',
-                transition: 'transform 0.2s',
-                mb: 3
-              }}
-            >
-              Withdraw
-            </Button>
+            <Box sx={{ display: "flex", gap: 3, justifyContent: "center", mt: 2 }}>
+              <Button
+                variant='contained'
+                color='primary'
+                onClick={handleWithdrawClick}
+                sx={{
+                  py: 1.5,
+                  borderRadius: '12px',
+                  transform: clicked ? 'scale(0.98)' : 'scale(1)',
+                  transition: 'transform 0.2s',
+                  mb: 3
+                }}
+              >
+                Withdraw
+              </Button>
               <SwapCoinPurchaseButton
                 buttonName='Deposit'
                 coinConversionRate={2}
@@ -425,8 +447,66 @@ useEffect(() => {
                 walletAddress={walletData.public_key}
                 onPurchaseComplete={handlePurchaseComplete}
               />
-            </Box>  
+            </Box>
           </Grow>
+
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: 2,
+              mt: 2,
+            
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+              <Box
+                sx={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #9C27B0 0%, #673AB7 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mr: 1
+                }}
+              >
+                <Typography sx={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>
+                  S
+                </Typography>
+              </Box>
+              <Typography
+                variant='h5'
+                sx={{
+                  color: 'text.primary',
+                  fontWeight: 600,
+                  background: 'linear-gradient(135deg, #9C27B0 0%, #673AB7 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+              >
+                {Number(solanaBalance || 0).toFixed(4)}
+                <Typography
+                  component='span'
+                  sx={{
+                    color: 'text.secondary',
+                    ml: 1,
+                    fontSize: '0.8em',
+                    fontWeight: 400
+                  }}
+                >
+                  SOL
+                </Typography>
+              </Typography>
+            </Box>
+
+          </Box>
+
+
 
           {/* Transaction History Section */}
           <Box sx={{ mt: 0 }}>

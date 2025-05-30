@@ -70,7 +70,7 @@ const OrderManagement: React.FC<OrderManagementProps> = ({
         <Box sx={{ p: 4, bgcolor: 'background.default' }}>
             <CardContent>
                 <Typography variant="h5" color="primary" sx={{ mb: 3 }}>
-                    Current Price: ${price}
+                    Current Price: ${Number(price).toFixed(2)}
                 </Typography>
                 {(isSeller && !buyerConfirmed) ? (
                     <>

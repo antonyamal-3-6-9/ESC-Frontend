@@ -1220,7 +1220,7 @@ const NFTOrderDetails: React.FC = () => {
                 {!orderData.shippingDetails.isBuyerConfirmed || !orderData.shippingDetails.isSellerConfirmed ? (
                   <OrderManagement
                     orderId={orderData.orderId}
-                    price={orderData.price}
+                    price={Number(orderData.price).toFixed(2)}
                     isSeller={orderData.ownerId === userId}
                     updatePrice={updatePrice}
                     buyerConfirmed={orderData.shippingDetails.isBuyerConfirmed}

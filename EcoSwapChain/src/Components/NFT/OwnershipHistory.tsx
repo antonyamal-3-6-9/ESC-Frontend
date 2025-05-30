@@ -26,7 +26,7 @@ interface Transaction {
     transferedTo: string;
     transferedFrom: string;
     transactionHash: string;
-    transactionType: 'mint' | 'transfer';
+    transactionType: 'MINT' | 'transfer';
     timestamp: number; // Unix timestamp
     status: 'success' | 'failed';
 }
@@ -164,6 +164,8 @@ const NFTOwnershipHistoryModal: React.FC<NFTOwnershipHistoryModalProps> = ({
     const [sortedTransactions, setSortedTransactions] = useState<Transaction[]>([]);
     const [ownershipDurations, setOwnershipDurations] = useState<{ [key: number]: string }>({});
 
+    console.log(transactions)
+
     useEffect(() => {
         // Sort transactions by timestamp (newest first)
         const sorted = [...transactions].sort((a, b) => b.timestamp - a.timestamp);
@@ -231,7 +233,7 @@ const NFTOwnershipHistoryModal: React.FC<NFTOwnershipHistoryModalProps> = ({
             <DialogContent sx={{ p: 3 }}>
                 {sortedTransactions.map((tx, index) => {
                     const isCurrentOwner = index === 0;
-                    const isMint = tx.transactionType === 'mint';
+                    const isMint = tx.transactionType === 'MINT';
 
                     return (
                         <Fade key={tx.transactionHash} in={true} timeout={(index + 1) * 300}>

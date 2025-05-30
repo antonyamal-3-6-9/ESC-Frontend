@@ -1,4 +1,4 @@
-import { TextField, Button, Box, Typography, useTheme } from "@mui/material";
+import { TextField, Button, Box, Typography } from "@mui/material";
 import Container from "@mui/material/Container";
 import { useState } from "react";
 import { Google } from "@mui/icons-material";
@@ -33,11 +33,12 @@ interface Trader {
   lastName: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
 const Register = () => {
   const dispatch = useDispatch();
-  const theme = useTheme();
+
 
   const [open, setOpen] = useState(false);
   const [otp, setOtp] = useState("");
@@ -49,6 +50,7 @@ const Register = () => {
     lastName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [walletData, setWalletData] = useState<Wallet>({
@@ -63,6 +65,7 @@ const Register = () => {
     lastName: string;
     email: string;
     password: string;
+    confirmPassword: string;
   }>>({});
 
   // Platform features for animation
@@ -125,6 +128,7 @@ const Register = () => {
       lastName: string;
       email: string;
       password: string;
+      confirmPassword: string;
     }> = {};
 
     // Username validation
@@ -168,6 +172,10 @@ const Register = () => {
       newErrors.password = "Password must contain at least one number.";
     }
 
+    if (registerData.confirmPassword.trim() !== registerData.password.trim()) {
+      newErrors.confirmPassword = "Passwords do not match.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -190,6 +198,7 @@ const Register = () => {
         lastName: "",
         email: "",
         password: "",
+        confirmPassword: "",
       });
       setOpen(false);
 
@@ -527,6 +536,40 @@ const Register = () => {
                   onChange={handleChange}
                   error={!!errors.password}
                   helperText={errors.password}
+                  required
+                  InputProps={{
+                    sx: {
+                      borderRadius: 2,
+                      backgroundColor: "#f8f9fa",
+                      "&:hover": { backgroundColor: "#f1f3f5" },
+                      transition: "all 0.3s ease",
+                    }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": { borderColor: "#d0e8e6" },
+                      "&:hover fieldset": { borderColor: "#4DA1A9" },
+                      "&.Mui-focused fieldset": { borderColor: "#4DA1A9" },
+                    },
+                  }}
+                />
+              </motion.div>
+              <motion.div
+                variants={formFieldVariants}
+                initial="hidden"
+                animate="visible"
+                custom={4}
+              >
+                <TextField
+                  label="Confirm Password"
+                  variant="outlined"
+                  fullWidth
+                  type="password"
+                  name="confirmPassword"
+                  value={registerData.confirmPassword}
+                  onChange={handleChange}
+                  error={!!errors.confirmPassword}
+                  helperText={errors.confirmPassword}
                   required
                   InputProps={{
                     sx: {

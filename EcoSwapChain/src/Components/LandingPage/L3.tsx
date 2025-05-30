@@ -27,7 +27,6 @@ import {
     Zoom,
     Slide,
     useScrollTrigger,
-    Tooltip
 } from '@mui/material';
 import {
     ArrowForward,

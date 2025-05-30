@@ -33,6 +33,10 @@ import NFTAdminDashboard from './Components/Admin/Home'
 
 import HubManagerLogin from './Components/ShippingPartner/PartnerLogin'
 
+import { clearUser } from './Redux/userSlice'
+
+import type { AppDispatch } from './store'
+
 
 
 import * as buffer from "buffer";
@@ -40,18 +44,21 @@ window.Buffer = buffer.Buffer;
 
 function App() {
 
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   
 
-    useEffect(() => {
-      dispatch(checkAuth() as never)
-    }, [dispatch])
-  
+
   const location = useLocation()
+  
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
+
+    
 
   return (
     <>
-      {location.pathname.split("/")[1] !== "shipping" && ( location.pathname.split("/")[1] === "admin" ? <SwapchainNavbar /> : <Navbar /> )}
+      {location.pathname.split("/")[1] !== "shipping" && ( location.pathname.split("/")[1] === "admin"  ? <SwapchainNavbar /> : <Navbar /> )}
       
       {location.pathname.split("/")[3] !== "login" && <RouteDisplayC />}
       <CollapsibleAlert />

@@ -3,8 +3,8 @@ import Grid2 from "@mui/material/Grid2";
 import Container from "@mui/material/Container";
 import { Google } from "@mui/icons-material";
 import LImg from "./LImg.jpg";
-import { useState } from "react";
-import { activateUser, setUser } from "../../Redux/userSlice";
+import { useState, useEffect } from "react";
+import { activateUser, setUser, clearUser } from "../../Redux/userSlice";
 import { setLoading, setAlertMessage, setAlertOn, setAlertSeverity } from "../../Redux/alertBackdropSlice";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -12,6 +12,8 @@ import { PublicAPI } from "../API/api";
 import CollapsibleAlert from "../Alert/Alert";
 import BackDrop from "../Backdrop/Backdrop";
 import { useParams } from "react-router";
+import { clear } from "console";
+
 
 interface LoginData {
   email: string;
@@ -28,6 +30,8 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+
+
   const [loginData, setLoginData] = useState<LoginData>({
     email: "",
     password: "",
@@ -35,6 +39,10 @@ const Login = () => {
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  useEffect(() => {
+    dispatch(clearUser())
+  }, [])
 
   // Validate form inputs
   const validateForm = (): boolean => {

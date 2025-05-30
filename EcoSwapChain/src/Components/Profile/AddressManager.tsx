@@ -79,6 +79,8 @@ const AddressManager: React.FC<AddressProps> = ({ addressesData }) => {
                 await API.put(`/order/update/address/${address.id}/`, {
                     "address" : address
                 });
+                
+                setAddresses((prev) => prev.map((addr) => (addr.id === address.id ? {...addr, ...address} : addr)));
 
                 if (address.default) {
                     setAddresses((prev) =>

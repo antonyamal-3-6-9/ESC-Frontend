@@ -1,4 +1,4 @@
-import { Keypair, Connection, PublicKey } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
 import { getWallet } from "./Wallet/wallet";
 import { transferToTreasury } from "./Token/nftFeeTransfer";
 import { API } from "../Components/API/api";

@@ -10,7 +10,6 @@ import {
   Tab,
   Fade,
   LinearProgress,
-  Divider,
 } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import {

@@ -11,16 +11,12 @@ import {
     Grow,
     useScrollTrigger,
     Avatar,
-    Accordion,
-    AccordionSummary,
-    AccordionDetails,
     List,
     ListItem,
     IconButton
 } from '@mui/material';
 import { SwapTheme } from '../../theme';
 import { ThemeProvider } from '@mui/material/styles';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import ShieldIcon from '@mui/icons-material/Shield';
 import RepeatIcon from '@mui/icons-material/Repeat';

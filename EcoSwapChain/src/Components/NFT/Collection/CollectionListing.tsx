@@ -23,7 +23,7 @@ import {
   Launch,
   MoreVert,
 } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+import { styled, Theme } from '@mui/material/styles';
 import { API } from '../../API/api';
 import { useDispatch } from 'react-redux';
 import { setAlertMessage, setAlertOn, setAlertSeverity, setLoading } from '../../../Redux/alertBackdropSlice';
@@ -46,7 +46,7 @@ interface NFTAsset {
 }
 
 // Styled Components
-const StyledCard = styled(Card)(({ theme }) => ({
+const StyledCard = styled(Card)(() => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
@@ -65,6 +65,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   },
 }));
 
+
 const CardActions = styled(Box)(({ theme }) => ({
   position: 'absolute',
   bottom: 0,
@@ -82,6 +83,7 @@ const CardActions = styled(Box)(({ theme }) => ({
 }));
 
 const CardOverlay = styled(Box)(({ theme }) => ({
+  ...(theme as Theme), 
   position: 'absolute',
   top: 0,
   left: 0,

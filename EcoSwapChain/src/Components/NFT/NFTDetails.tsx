@@ -60,7 +60,7 @@ export interface NFTTransaction {
   transferedTo: string;
   transferedFrom: string;
   transactionHash: string;
-  transactionType: 'mint' | 'transfer';
+  transactionType: 'MINT' | 'transfer';
   timestamp: number; // Unix timestamp
   status: 'success' | 'failed';
 }

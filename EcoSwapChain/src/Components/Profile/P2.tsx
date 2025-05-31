@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Avatar,
     Box,
@@ -23,7 +23,6 @@ import {
     Badge,
     List,
     ListItem,
-    ListItemAvatar,
     ListItemText,
     Switch,
     Tooltip,
@@ -40,7 +39,6 @@ import {
     MonetizationOn,
     Send,
     Visibility,
-    ShoppingBag,
     QrCode2,
     Add,
     ArrowUpward,
@@ -50,6 +48,12 @@ import {
     NotificationsActive
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;// for spreading ...other
+}
 
 // Animation variants
 const fadeInUp = {
@@ -192,7 +196,7 @@ const UserProfileSection = () => {
     ];
 
     // Handle tab change
-    const handleTabChange = (event, newValue) => {
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
     };
 
@@ -1077,16 +1081,13 @@ const UserProfileSection = () => {
 };
 
 // TabPanel component
-const TabPanel = (props) => {
-    const { children, value, index, ...other } = props;
-
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, }) => {
     return (
         <div
             role="tabpanel"
             hidden={value !== index}
             id={`tabpanel-${index}`}
             aria-labelledby={`tab-${index}`}
-            {...other}
         >
             {value === index && (
                 <Box>
@@ -1096,5 +1097,4 @@ const TabPanel = (props) => {
         </div>
     );
 };
-
 export default UserProfileSection;

@@ -11,7 +11,6 @@ import {
   Fade,
   Stack,
   Chip,
-  Tooltip,
   Container,
   InputBase,
   Paper,
@@ -26,28 +25,22 @@ import {
   RadioGroup,
   Radio,
   Zoom,
-  Breadcrumbs,
   Backdrop,
   CircularProgress,
-  Grid2
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
-  Favorite,
-  ShoppingCart,
   ArrowForward,
   Sell,
   Category,
   Search,
   FilterAlt,
   Sort,
-  NavigateNext,
-  Home,
   AccessTime,
   AttachMoney,
   Refresh
 } from '@mui/icons-material';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PublicAPI } from '../API/api';
 
@@ -93,33 +86,14 @@ const ProductCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const StyledCardMedia = styled(CardMedia)(({ theme }) => ({
+const StyledCardMedia = styled(CardMedia)(() => ({
   height: 260,
   transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
   backgroundPosition: 'center center',
 }));
 
-const ProductActions = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  top: 8,
-  right: 8,
-  display: 'flex',
-  gap: theme.spacing(1),
-  opacity: 0,
-  transform: 'translateY(-10px)',
-  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-  zIndex: 1,
-}));
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  backdropFilter: 'blur(4px)',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-  '&:hover': {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-  },
-}));
+
 
 const CategoryChip = styled(Chip)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
@@ -132,7 +106,7 @@ const CategoryChip = styled(Chip)(({ theme }) => ({
   },
 }));
 
-const ConditionChip = styled(Chip)(({ theme }) => ({
+const ConditionChip = styled(Chip)(() => ({
   position: 'absolute',
   top: 8,
   left: 8,
@@ -239,7 +213,6 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 const ProductGrid: React.FC = () => {
   const theme = useTheme();
   const [products, setProducts] = useState<Product[]>([]);
-  const location = useLocation();
 
   // Filter and Sort States
   const [searchQuery, setSearchQuery] = useState('');
@@ -249,8 +222,7 @@ const ProductGrid: React.FC = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Path segments for breadcrumbs
-  const pathSegments = location.pathname.split('/').filter(segment => segment);
+
 
   // Extract unique categories
 
@@ -645,21 +617,21 @@ const ProductGrid: React.FC = () => {
 
                               {/* View Details Button */}
                               <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                                <ViewButton
-                                  component={Link}
-                                  to={`/nft/retrieve/${product.id}`}
-                                  variant="contained"
-                                  color="primary"
-                                  endIcon={<ArrowForward />}
-                                  fullWidth
-                                >
-                                  View Details
-                                </ViewButton>
+                                <Link to={`/nft/retrieve/${product.id}`}>
+                                  <ViewButton
+                                    variant="contained"
+                                    color="primary"
+                                    endIcon={<ArrowForward />}
+                                    fullWidth
+                                  >
+                                    View Details
+                                  </ViewButton>
+                                </Link>
+               
                               </Box>
                             </CardContent>
                             </ProductCard>
                        
-
                         </Zoom>
                       </motion.div>
                     </Grid>

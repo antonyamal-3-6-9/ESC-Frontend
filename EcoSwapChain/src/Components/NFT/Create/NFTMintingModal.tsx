@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
     Modal,
     Box,
@@ -183,8 +183,6 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [transactionProgress, setTransactionProgress] = useState(0);
-    const [transactionHash, setTransactionHash] = useState('');
     const [mintingProgress, setMintingProgress] = useState(0);
     const [treasuryPublicKey, setTreasuryPublicKey] = useState('');
 
@@ -199,8 +197,6 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
     const steps = ['Review NFT', 'Confirm Payment', 'Sign Transaction', 'SwapCoin Transfer', 'Mint NFT', 'Success', 'Transfer Failed', 'Minting Failed'];
 
     // Add these states to track failure conditions
-    const [transferFailed, setTransferFailed] = useState(false);
-    const [mintingFailed, setMintingFailed] = useState(false);
 
 
     const [userSwapCoinBalance, setUserSwapCoinBalance] = useState<number>(0)
@@ -288,27 +284,9 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         }
     };
 
-    // Add refs to track intervals
-    const txIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const mintIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    const simulateTransactionProgress = () => {
-        // Clear existing interval
-        if (txIntervalRef.current) clearInterval(txIntervalRef.current);
 
-        txIntervalRef.current = setInterval(() => {
-            setTransactionProgress(prev => Math.min(prev + 5, 100));
-        }, 200);
-    };
 
-    const simulateMintingProgress = () => {
-        // Clear existing interval
-        if (mintIntervalRef.current) clearInterval(mintIntervalRef.current);
-
-        mintIntervalRef.current = setInterval(() => {
-            setMintingProgress(prev => Math.min(prev + 1, 100));
-        }, 200);
-    };
 
     // Update handleConfirm with proper synchronization
     const handleConfirm = async () => {
@@ -319,8 +297,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
 
         setIsProcessing(true);
         setError(null);
-        setTransferFailed(false);
-        setMintingFailed(false);
+
 
         let responseData;
         let txHash = "";
@@ -329,12 +306,14 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
 
         try {
             // Phase 1: Initiate Fee Transfer (0-25%)
+        
             responseData = await initiateFeeTransfer();
             setTreasuryPublicKey(responseData.treasuryKey || "unknown_key");
 
             // Phase 2: Transaction Progress (25-75%)
+    
             setActiveStep(3);
-            simulateTransactionProgress();
+        
 
             try {
                 txHash = await decryptAndTransfer(
@@ -347,21 +326,21 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                 );
                 console.log("✅ Transfer Transaction Hash:", txHash);
             } catch (transferError) {
-                handleFailure("Transfer", transferError, setTransferFailed, 6);
+                handleFailure("Transfer", transferError, 6);
                 return;
             }
 
-            clearInterval(txIntervalRef.current!);
-            setTransactionProgress(100);
+        
+
 
             // Phase 3: Minting Progress (75-100%)
             setActiveStep(4);
-            simulateMintingProgress();
-
+            setMintingProgress(50)
+    
             try {
                 metadata = await getURI(txHash);
             } catch (mintingError) {
-                handleFailure("Minting", mintingError, setMintingFailed, 7);
+                handleFailure("Minting", mintingError, 7);
                 return;
             }
 
@@ -373,7 +352,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                     mintAddress: tx.mintAddress
                 })
             } catch (mintingError) {
-                handleFailure("Minting", mintingError, setMintingFailed, 7);
+                handleFailure("Minting", mintingError, 7);
                 return;
             }
 
@@ -387,8 +366,8 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                 console.error("⚠️ NFT Mint Save Failed:", apiError);
             }
 
-            clearInterval(mintIntervalRef.current!);
-            setMintingProgress(100);
+            setMintingProgress(100)
+
             setActiveStep(5);
 
         } catch (err) {
@@ -402,7 +381,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
     const handleFailure = (
         type: "Transfer" | "Minting",
         error: unknown,
-        setFailureState: React.Dispatch<React.SetStateAction<boolean>>,
+
         step: number
     ) => {
         console.error(`${type} Error:`, error);
@@ -411,20 +390,12 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         dispatch(setAlertOn(true));
         dispatch(setAlertSeverity("error"));
 
-        setFailureState(true);
         setActiveStep(step);
 
-        clearInterval(txIntervalRef.current!);
-        clearInterval(mintIntervalRef.current!);
         setIsProcessing(false);
     };
 
     const handleGenericError = (err: unknown) => {
-        clearInterval(txIntervalRef.current!);
-        clearInterval(mintIntervalRef.current!);
-
-        setTransactionProgress(0);
-        setMintingProgress(0);
         setActiveStep(2);
 
         console.error("❌ Transaction error:", err);
@@ -448,10 +419,6 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
         setPassword('');
         setError(null);
         setIsProcessing(false);
-        setTransactionProgress(0);
-        setMintingProgress(0);
-        setTransferFailed(false);
-        setMintingFailed(false);
         setNftBlkChainData({
             txHash: "",
             mintAddress: ""
@@ -848,7 +815,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                     variant="contained"
                                     color="primary"
                                     onClick={() => {
-                                        setTransferFailed(false);
+                        
                                         setPassword('');
                                         setActiveStep(2); // Go back to password step
                                     }}
@@ -921,7 +888,7 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                         borderColor: 'divider'
                                     }}
                                 >
-                                    {transactionHash || 'Transaction hash unavailable'}
+                                    {nftBlkChainData.txHash}
                                 </Typography>
                             </TransactionCard>
                         </motion.div>
@@ -944,7 +911,6 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                     variant="contained"
                                     color="primary"
                                     onClick={() => {
-                                        setMintingFailed(false);
                                         setPassword('');
                                         setActiveStep(2); // Go back to password step
                                     }}
@@ -1034,8 +1000,6 @@ export const NFTMintingModal: React.FC<NFTMintingModalProps> = ({
                                     variant="contained"
                                     color="primary"
                                     onClick={() => {
-                                        setTransferFailed(false);
-                                        setMintingFailed(false);
                                         setPassword('');
                                         setActiveStep(2); // Go back to password step
                                     }}

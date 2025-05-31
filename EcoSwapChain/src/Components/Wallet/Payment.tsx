@@ -26,7 +26,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LockIcon from '@mui/icons-material/Lock';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import { API } from '../API/api';
-import { Transaction } from './Wallet';
 
 // Types
 interface CoinSelectionModalProps {
@@ -218,7 +217,7 @@ const SwapCoinSelectionModal: React.FC<CoinSelectionModalProps> = ({
         setIsCustom(true);
     };
 
-    const handleCustomAmountChange = (event: Event, newValue: number | number[]) => {
+    const handleCustomAmountChange = (_event: Event, newValue: number | number[]) => {
         setCustomAmount(newValue as number);
     };
 

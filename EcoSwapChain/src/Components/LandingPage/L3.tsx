@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { SwapTheme } from '../../theme';
 import {
-    AppBar,
     Box,
     Button,
     Card,
@@ -22,12 +21,8 @@ import {
     ListItem,
     ListItemIcon,
     ListItemText,
-    Paper,
     Fade,
-    Zoom,
-    Slide,
-    useScrollTrigger,
-} from '@mui/material';
+} from '@mui/material'
 import {
     ArrowForward,
     ExpandMore,
@@ -38,7 +33,6 @@ import {
     PriceCheck,
     History,
     QuestionAnswer,
-    Menu as MenuIcon,
     YouTube,
     Twitter,
     Facebook,
@@ -218,7 +212,6 @@ const staggerContainer = {
 const LandingPageThree = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const trigger = useScrollTrigger({ threshold: 100 });
 
     const user = useAppSelector(state => state.user)
 
@@ -230,7 +223,14 @@ const LandingPageThree = () => {
     }, []);
 
     // Animated number counter for statistics
-    const Counter = ({ targetNumber, label, duration = 2000 }) => {
+
+    type CounterData = {
+        targetNumber: string;
+        label: string;
+        duration?: number; // optional with default
+    };
+
+    const Counter = ({ targetNumber, label, duration = 2000 } : CounterData) => {
         const [count, setCount] = useState(0);
 
         useEffect(() => {

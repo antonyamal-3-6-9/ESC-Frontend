@@ -31,8 +31,6 @@ import {
   ContentCopy as ContentCopyIcon,
   LocalShipping as LocalShippingIcon,
   AccountBalanceWallet as WalletIcon,
-  Schedule as ScheduleIcon,
-  Update as UpdateIcon,
   TrackChanges as TrackChangesIcon,
   Check as CheckIcon,
   Payments as PaymentsIcon,
@@ -361,7 +359,7 @@ const NFTOrderDetails: React.FC = () => {
   const socketUpdateUrl = `ws://127.0.0.1:8000/ws/updates/${id}/`
 
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [updateSocket, setUpdateSocket] = useState<WebSocket | null>(null)
+
 
   useEffect(() => {
     const newSocket = new WebSocket(socketUpdateUrl);
@@ -453,8 +451,6 @@ const NFTOrderDetails: React.FC = () => {
     newSocket.onclose = () => {
       console.log("🔴 WebSocket disconnected");
     };
-
-    setUpdateSocket(newSocket);
 
     return () => {
       newSocket.close(); // Cleanup on unmount

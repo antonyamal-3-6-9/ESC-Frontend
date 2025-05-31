@@ -20,16 +20,9 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import { format, formatDistanceToNow, differenceInDays } from 'date-fns';
+import { NFTTransaction as Transaction } from './NFTDetails';
 
-// Types
-interface Transaction {
-    transferedTo: string;
-    transferedFrom: string;
-    transactionHash: string;
-    transactionType: 'MINT' | 'transfer';
-    timestamp: number; // Unix timestamp
-    status: 'success' | 'failed';
-}
+
 
 interface NFTOwnershipHistoryModalProps {
     open: boolean;
@@ -135,8 +128,8 @@ const StatusChip = styled(Chip)(({ theme, status }: { theme: any; status: 'succe
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TypeIcon = styled(Box)(({ theme, transactionType }: { theme: any; transactionType: 'mint' | 'transfer' }) => ({
-    backgroundColor: transactionType === 'mint' ? theme.palette.accent.main : theme.palette.primary.main,
+const TypeIcon = styled(Box)(({ theme, transactionType }: { theme: any; transactionType: 'MINT' | 'transfer' }) => ({
+    backgroundColor: transactionType === 'MINT' ? theme.palette.accent.main : theme.palette.primary.main,
     borderRadius: '50%',
     padding: '8px',
     display: 'flex',

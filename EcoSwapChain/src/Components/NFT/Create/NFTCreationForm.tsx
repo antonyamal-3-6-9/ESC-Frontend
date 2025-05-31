@@ -307,7 +307,7 @@ const NFTCreationForm: React.FC = () => {
 
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
 
-  const handleMaterialChange = (event: React.MouseEvent<HTMLElement>,newMaterials: string[]) => {
+  const handleMaterialChange = (_event: React.MouseEvent<HTMLElement>,newMaterials: string[]) => {
       setSelectedMaterials(newMaterials);
     };
   
@@ -820,15 +820,14 @@ const NFTCreationForm: React.FC = () => {
   };
 
   const [anchorEl, setAnchorEl] = useState(null);
-  const [currentField, setCurrentField] = useState<string | HTMLElement>("");
+  type FieldKey = keyof typeof fieldDescriptions;
 
-  const handleInfoClick = (event: React.MouseEvent<HTMLElement>, fieldName: string) => {
-    dispatch(setAlertOn(false))
-    setTimeout(() => {
-      dispatch(setAlertOn(true));
-      dispatch(setAlertMessage(fieldDescriptions[fieldName].description));
-      dispatch(setAlertSeverity("info"));
-    }, 500)
+  const [currentField, setCurrentField] = useState<FieldKey | null>(null);
+
+
+  const handleInfoClick = (e: React.MouseEvent<HTMLElement>, fieldName: string) => {
+    e.stopPropagation(); // prevent event bubbling if needed
+    setCurrentField(fieldName);
   };
 
   const handleInfoClose = () => {
@@ -1258,26 +1257,28 @@ const NFTCreationForm: React.FC = () => {
                   horizontal: 'center',
                 }}
               >
-                { currentField && fieldDescriptions[currentField as keyof typeof fieldDescriptions] && (
+                {typeof currentField === "string" && currentField in fieldDescriptions && (
                   <Paper sx={{ p: 2, maxWidth: 350 }}>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                      {currentField === "destructable" ? "Biodegradable" :
-                        String(currentField).replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
+                      {currentField === "destructable"
+                        ? "Biodegradable"
+                        : currentField.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
                     </Typography>
 
                     <Typography variant="body2" paragraph>
-                      {fieldDescriptions[currentField as keyof typeof fieldDescriptions].description}
+                      {fieldDescriptions[currentField].description}
                     </Typography>
 
                     <Typography variant="body2" color="text.secondary" paragraph>
-                      {fieldDescriptions[currentField as keyof typeof fieldDescriptions].examples}
+                      {fieldDescriptions[currentField].examples}
                     </Typography>
 
                     <Typography variant="body2" color="primary" fontStyle="italic">
-                      {fieldDescriptions[currentField as keyof typeof fieldDescriptions].importance}
+                      {fieldDescriptions[currentField].importance}
                     </Typography>
                   </Paper>
                 )}
+
               </Popover>
 
               <Grid item xs={12}>

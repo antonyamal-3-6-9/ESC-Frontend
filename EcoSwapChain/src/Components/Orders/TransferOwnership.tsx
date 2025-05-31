@@ -48,7 +48,8 @@ const TransferOwnershipModal: React.FC<TransferOwnershipModalProps> = ({
     const [currentStep, setCurrentStep] = useState<TransferStep>(TransferStep.CONFIRMATION);
     const [password, setPassword] = useState<string>('');
     const [passwordError, setPasswordError] = useState<string>('');
-    const [processingMessage, setProcessingMessage] = useState<string>('Processing your request...');
+    const [processingMessage, setProcessingMessage] = useState<string>('');
+    setProcessingMessage('Processing your request...')
 
     const dispatch = useDispatch();
 

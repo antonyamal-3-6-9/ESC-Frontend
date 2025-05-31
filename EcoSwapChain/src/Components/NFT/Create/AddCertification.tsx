@@ -50,13 +50,14 @@ const CertificationModal: React.FC<CertificationModalProps> = ({ open, onClose, 
 
         setErrors(newErrors);
 
-        return Object.keys(newErrors).length === 0;
+        // return Object.keys(newErrors).length === 0;
+        return true
     };
 
     const handleSubmit = () => {
-        if (certification.name && certification.description && certification.certificationNumber) {
+        if (validateForm()) {
             onSave(certification);
-            setCertification({ name: "", description: "", certificationNumber: "" }); // Reset fields
+            setCertification({ name: "", description: "", certificationNumber: "" });
         }
     };
 

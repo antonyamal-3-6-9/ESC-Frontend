@@ -5,7 +5,6 @@ import {
     Paper,
     Grid,
     Card,
-    CardContent,
     List,
     ListItem,
     Divider,
@@ -14,14 +13,12 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    TextField,
     Chip,
     Fade,
     Zoom,
     useTheme,
     SelectChangeEvent,
     Container,
-    Grid2
 } from '@mui/material';
 import { Add, LocationOn, FilterAlt, Refresh } from '@mui/icons-material';
 import { motion } from 'framer-motion';
@@ -100,7 +97,6 @@ export default function HubManagementDashboard(): JSX.Element {
     const [addMode, setAddMode] = useState<boolean>(false);
     const [deleteMode, setDeleteMode] = useState<boolean>(false);
 
-    const [onFilter, setOnFilter] = useState<boolean>(false);
 
 
     // Generate unique values for filter options
@@ -127,7 +123,6 @@ export default function HubManagementDashboard(): JSX.Element {
 
     useEffect(() => {
         fetchHubs();
-        console.log(markers)
     }, [])
 
     useEffect(() => {
@@ -150,10 +145,9 @@ export default function HubManagementDashboard(): JSX.Element {
         }
 
         setHubs(filteredHubs);
-    }, [filters]);
+    }, [filters, hubs]);
 
     const handleFilterChange = (event: SelectChangeEvent): void => {
-        setOnFilter(true)
         const { name, value } = event.target;
         setFilters(prevFilters => ({
             ...prevFilters,
@@ -162,7 +156,6 @@ export default function HubManagementDashboard(): JSX.Element {
     };
 
     const resetFilters = (): void => {
-        setOnFilter(false)
         setFilters({
             district: '',
             state: '',

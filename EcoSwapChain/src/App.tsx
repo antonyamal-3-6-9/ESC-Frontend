@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import './App.css'
 import './index.css'
 import { Routes, Route, useLocation } from 'react-router-dom'
@@ -32,8 +32,6 @@ import RouteDisplayC from './Components/RouteDisplay'
 import NFTAdminDashboard from './Components/Admin/Home'
 
 import HubManagerLogin from './Components/ShippingPartner/PartnerLogin'
-
-import { clearUser } from './Redux/userSlice'
 
 import type { AppDispatch } from './store'
 

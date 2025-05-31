@@ -12,7 +12,7 @@ import { PublicAPI } from "../API/api";
 import CollapsibleAlert from "../Alert/Alert";
 import BackDrop from "../Backdrop/Backdrop";
 import { useParams } from "react-router";
-import { clear } from "console";
+
 
 
 interface LoginData {

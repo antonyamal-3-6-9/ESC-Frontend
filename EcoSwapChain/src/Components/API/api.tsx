@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { dispatchAlert } from './apiHelper'
-const BASE_URL = 'http://127.0.0.1:8000/'
+const BASE_URL = 'http://13.201.18.213:8000/'
 
 // ✅ **Public API (No Authentication Needed)**
 export const PublicAPI = axios.create({
@@ -93,7 +93,7 @@ API.interceptors.response.use(
           'auth/token/update/',
           {},
           { withCredentials: true }
-        ) 
+        )
 
         // Store new token
         localStorage.setItem('token', refreshResponse.data.access_token)

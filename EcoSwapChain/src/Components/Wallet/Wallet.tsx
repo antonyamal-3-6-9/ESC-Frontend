@@ -26,6 +26,7 @@ import CheckIcon from '@mui/icons-material/Check'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard'
+import CloseIcon from '@mui/icons-material/Close'
 import { Theme } from '@mui/material/styles'
 import { API } from '../API/api'
 import Logo from "../logos/svg/logo-color.svg"
@@ -61,6 +62,10 @@ interface WalletData {
   balance: number
   sent_transaction: Transaction[]
   recieved_transaction: Transaction[]
+}
+
+interface WalletProps {
+  onClose?: () => void
 }
 
 // Custom theme with provided colors
@@ -103,6 +108,7 @@ const AnimatedCard = styled(Box)(({ theme }: { theme: Theme }) => ({
   padding: theme.spacing(3),
   boxShadow: '0 8px 32px rgba(46, 80, 119, 0.1)',
   transition: 'transform 0.3s, box-shadow 0.3s',
+  position: 'relative',
   '&:hover': {
     transform: 'translateY(-4px)',
     boxShadow: '0 12px 40px rgba(46, 80, 119, 0.15)'
@@ -115,6 +121,21 @@ const TransactionItem = styled(ListItem)(({ theme }: { theme: Theme }) => ({
   transition: 'background-color 0.2s',
   '&:hover': {
     backgroundColor: 'rgba(77, 161, 169, 0.05)'
+  }
+}))
+
+const CloseButton = styled(IconButton)(({ theme }: { theme: Theme }) => ({
+  position: 'absolute',
+  top: theme.spacing(2),
+  right: theme.spacing(2),
+  color: theme.palette.secondary.main,
+  backgroundColor: 'rgba(46, 80, 119, 0.05)',
+  width: 32,
+  height: 32,
+  transition: 'all 0.2s',
+  '&:hover': {
+    backgroundColor: 'rgba(46, 80, 119, 0.1)',
+    transform: 'scale(1.1)'
   }
 }))
 
@@ -131,7 +152,7 @@ const formatDate = (dateString: string | undefined): string => {
 
 
 
-const Wallet: React.FC = () => {
+const Wallet: React.FC<WalletProps> = ({ onClose }) => {
   const [walletData, setWalletData] = useState<WalletData>({
     public_key: '',
     balance: 0,
@@ -181,55 +202,55 @@ const Wallet: React.FC = () => {
     getWalletData()
   }, [])
 
-useEffect(() => {
-  if (!walletData.public_key) return; // Don't connect until public_key is available
+  useEffect(() => {
+    if (!walletData.public_key) return; // Don't connect until public_key is available
 
-  const socketUrl = `ws://127.0.0.1:8000/ws/transaction/${walletData.public_key}/`;
-  const socket = new WebSocket(socketUrl);
+    const socketUrl = `ws://127.0.0.1:8000/ws/transaction/${walletData.public_key}/`;
+    const socket = new WebSocket(socketUrl);
 
-  socket.onopen = () => {
-    console.log("Transaction Socket connection established");
-  };
+    socket.onopen = () => {
+      console.log("Transaction Socket connection established");
+    };
 
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log("Transaction Socket message received:", data);
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Transaction Socket message received:", data);
 
-      if (data.type === "transaction" && data.transactionData) {
-        const tx = data.transactionData;
-        const amount = Number(tx.amount) || 0;
+        if (data.type === "transaction" && data.transactionData) {
+          const tx = data.transactionData;
+          const amount = Number(tx.amount) || 0;
 
-        if (tx.transaction_type === "BUY" || tx.transaction_type === "REWARD") {
-          setWalletData((prev) => ({
-            ...prev,
-            balance: Number(prev.balance)  + amount,
-            recieved_transaction: [...prev.recieved_transaction, tx],
-          }));
+          if (tx.transaction_type === "BUY" || tx.transaction_type === "REWARD") {
+            setWalletData((prev) => ({
+              ...prev,
+              balance: Number(prev.balance) + amount,
+              recieved_transaction: [...prev.recieved_transaction, tx],
+            }));
+          } else {
+            setWalletData((prev) => ({
+              ...prev,
+              balance: prev.balance - amount,
+              sent_transaction: [...prev.sent_transaction, tx],
+            }));
+          }
         } else {
-          setWalletData((prev) => ({
-            ...prev,
-            balance: prev.balance - amount,
-            sent_transaction: [...prev.sent_transaction, tx],
-          }));
+          console.warn("Unexpected transaction socket format:", data);
         }
-      } else {
-        console.warn("Unexpected transaction socket format:", data);
+      } catch (err) {
+        console.error("Error handling WebSocket transaction message:", err);
       }
-    } catch (err) {
-      console.error("Error handling WebSocket transaction message:", err);
-    }
-  };
+    };
 
 
-  socket.onerror = (error) => {
-    console.log("Transaction Socket error:", error);
-  };
+    socket.onerror = (error) => {
+      console.log("Transaction Socket error:", error);
+    };
 
-  return () => {
-    socket.close();
-  };
-}, [walletData.public_key]);
+    return () => {
+      socket.close();
+    };
+  }, [walletData.public_key]);
 
 
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false)
@@ -250,6 +271,12 @@ useEffect(() => {
   const handleWithdrawClick = (): void => {
     setClicked(true)
     setTimeout(() => setClicked(false), 200)
+  }
+
+  const handleClose = (): void => {
+    if (onClose) {
+      onClose()
+    }
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -364,6 +391,12 @@ useEffect(() => {
     <ThemeProvider theme={theme}>
       <Slide in direction='up' timeout={500}>
         <AnimatedCard sx={{ maxWidth: 450, m: 1, minWidth: 300, overflow: "scroll" }}>
+          <Tooltip title="Close wallet">
+            <CloseButton onClick={handleClose} size="small">
+              <CloseIcon fontSize="small" />
+            </CloseButton>
+          </Tooltip>
+
           <Typography
             variant='h5'
             component="div"
@@ -375,7 +408,8 @@ useEffect(() => {
               alignItems: 'center',
               gap: 3,
               justifyContent: 'center',
-              mb: 2
+              mb: 2,
+              pr: 5 // Add padding to prevent overlap with close button
             }}
           >
             <img
@@ -455,7 +489,7 @@ useEffect(() => {
               textAlign: 'center',
               py: 2,
               mt: 2,
-            
+
               borderRadius: 2,
               border: '1px solid',
               borderColor: 'divider'

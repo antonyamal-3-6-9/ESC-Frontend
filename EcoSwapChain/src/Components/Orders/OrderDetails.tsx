@@ -717,7 +717,7 @@ const NFTOrderDetails: React.FC = () => {
 
 
         <Grid2 container>
-          <Grid2 size={5}>
+          <Grid2 size={{ xs: 12, md: 5 }}>
 
             <Box
               sx={{
@@ -833,7 +833,7 @@ const NFTOrderDetails: React.FC = () => {
               </Box>
             </Box>
           </Grid2>
-          <Grid2 size={7}>
+          <Grid2 size={{ xs: 12, md: 7 }}>
             <Box sx={{ height: "500px", p: 3, pb: 0, overflow: "scroll" }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <ChatIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
@@ -965,10 +965,10 @@ const NFTOrderDetails: React.FC = () => {
 
         <Divider />
         {/* Order Details Section */}
-        <Box sx={{ height: '50%', p: 3, pt: 2, overflow: "auto" }}>
+        <Box sx={{ height: '50%', p: { xs: 1, sm: 2, md: 3 }, pt: 2, overflow: "auto" }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <AssignmentIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
               Order Details
             </Typography>
           </Box>
@@ -980,18 +980,21 @@ const NFTOrderDetails: React.FC = () => {
             transition={{ delay: 0.3 }}
             sx={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 3
+              gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' },
+              gap: { xs: 2, sm: 3 }
             }}
           >
             {/* Left column */}
             <Box>
-              <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+              <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 2, sm: 3 }, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
                 <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
                   <AssignmentIcon fontSize="small" sx={{ mr: 0.5 }} /> Order ID
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="body2" fontFamily="monospace" sx={{ mr: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                  <Typography variant="body2" fontFamily="monospace" sx={{
+                    wordBreak: 'break-all',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}>
                     {orderData.orderId}
                   </Typography>
                   <Tooltip
@@ -1009,31 +1012,31 @@ const NFTOrderDetails: React.FC = () => {
               </Paper>
               {orderData.orderStatus !== "pending" &&
                 <Paper
-                  elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}
+                  elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 2, sm: 3 }, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <LocalShippingIcon sx={{ color: 'primary.main', mr: 1 }} />
-                      <Typography variant="h6" fontWeight="bold">
+                      <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                         Shipping Details
                       </Typography>
                     </Box>
                   </Box>
 
-                  <Grid2 container spacing={3}>
+                  <Grid2 container spacing={{ xs: 2, sm: 3 }}>
                     {/* Shipping From (Seller) */}
-                    <Grid2 size={6}>
+                    <Grid2 size={{ xs: 12, sm: 6 }}>
                       <Paper
                         elevation={1}
                         sx={{
-                          p: 2,
+                          p: { xs: 1.5, sm: 2 },
                           bgcolor: 'background.default',
                           borderRadius: 2
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                           <LocationOnIcon sx={{ color: 'secondary.main', mr: 1 }} />
-                          <Typography variant="subtitle1" fontWeight="bold">
+                          <Typography variant="subtitle1" fontWeight="bold" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                             Shipping From
                           </Typography>
                         </Box>
@@ -1044,30 +1047,33 @@ const NFTOrderDetails: React.FC = () => {
                             (userId === orderData.ownerId ?
                               <PersonIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} /> :
                               <WalletIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} />)}
-                          <Typography variant="body1" fontWeight="medium">
+                          <Typography variant="body1" fontWeight="medium" sx={{
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            wordBreak: 'break-word'
+                          }}>
                             {orderData.sellerName}
                           </Typography>
                         </Box>
 
-                        <Box sx={{ pl: 3 }}>
+                        <Box sx={{ pl: { xs: 2, sm: 3 } }}>
                           {formatAddress(orderData.shippingDetails?.seller_address)}
                         </Box>
                       </Paper>
                     </Grid2>
 
                     {/* Shipping To (Buyer) */}
-                    <Grid2 size={6}>
+                    <Grid2 size={{ xs: 12, sm: 6 }}>
                       <Paper
                         elevation={1}
                         sx={{
-                          p: 2,
+                          p: { xs: 1.5, sm: 2 },
                           bgcolor: 'background.default',
                           borderRadius: 2
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                           <HomeIcon sx={{ color: 'accent.main', mr: 1 }} />
-                          <Typography variant="subtitle1" fontWeight="bold">
+                          <Typography variant="subtitle1" fontWeight="bold" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                             Shipping To
                           </Typography>
                         </Box>
@@ -1078,12 +1084,15 @@ const NFTOrderDetails: React.FC = () => {
                             (userId === orderData.ownerId ?
                               <PersonIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} /> :
                               <WalletIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '1rem' }} />)}
-                          <Typography variant="body1" fontWeight="medium">
+                          <Typography variant="body1" fontWeight="medium" sx={{
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            wordBreak: 'break-word'
+                          }}>
                             {orderData.buyerName}
                           </Typography>
                         </Box>
 
-                        <Box sx={{ pl: 3 }}>
+                        <Box sx={{ pl: { xs: 2, sm: 3 } }}>
                           {formatAddress(orderData.shippingDetails?.buyer_address)}
                         </Box>
                       </Paper>
@@ -1093,29 +1102,29 @@ const NFTOrderDetails: React.FC = () => {
                   <Divider sx={{ my: 3 }} />
 
                   {/* Additional Shipping Info */}
-                  <Grid2 container spacing={3}>
-                    <Grid2 size={6}>
+                  <Grid2 container spacing={{ xs: 2, sm: 3 }}>
+                    <Grid2 size={{ xs: 12, sm: 6 }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                         <CalendarTodayIcon sx={{ color: 'secondary.main', mr: 1, fontSize: '1.25rem' }} />
                         <Box>
                           <Typography variant="body2" color="text.secondary">
                             Order Date
                           </Typography>
-                          <Typography variant="body1" fontWeight="medium">
+                          <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                             {new Date(orderData.createdAt).toLocaleDateString()}
                           </Typography>
                         </Box>
                       </Box>
                     </Grid2>
 
-                    <Grid2 size={6}>
+                    <Grid2 size={{ xs: 12, sm: 6 }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                         <AccessTimeIcon sx={{ color: 'secondary.main', mr: 1, fontSize: '1.25rem' }} />
                         <Box>
                           <Typography variant="body2" color="text.secondary">
                             Last Updated
                           </Typography>
-                          <Typography variant="body1" fontWeight="medium">
+                          <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                             {new Date(orderData.updatedAt).toLocaleString()}
                           </Typography>
                         </Box>
@@ -1127,8 +1136,14 @@ const NFTOrderDetails: React.FC = () => {
 
             {/* Right column */}
             <Box>
-              <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+              <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 2, sm: 3 }, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'space-between',
+                  gap: { xs: 2, sm: 0 },
+                  mb: 2
+                }}>
                   <Box>
                     <Typography variant="subtitle2" gutterBottom color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
                       <TrackChangesIcon fontSize="small" sx={{ mr: 0.5 }} /> Order Status
@@ -1138,11 +1153,10 @@ const NFTOrderDetails: React.FC = () => {
                       sx={{
                         bgcolor: getStatusColor(),
                         color: '#fff',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        fontSize: { xs: '0.75rem', sm: '0.8125rem' }
                       }}
                     />
-
-
                   </Box>
 
                   <Box>
@@ -1154,7 +1168,8 @@ const NFTOrderDetails: React.FC = () => {
                       sx={{
                         bgcolor: getConfirmationStatusColor(),
                         color: '#fff',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        fontSize: { xs: '0.75rem', sm: '0.8125rem' }
                       }}
                     />
                   </Box>
@@ -1168,7 +1183,8 @@ const NFTOrderDetails: React.FC = () => {
                       sx={{
                         bgcolor: getPaymentStatusColor(),
                         color: '#fff',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        fontSize: { xs: '0.75rem', sm: '0.8125rem' }
                       }}
                     />
                     {orderData.shippingDetails.verificationStatus === "approved" &&
@@ -1199,14 +1215,12 @@ const NFTOrderDetails: React.FC = () => {
                     }
                   </Box>
                 </Box>
-
-
               </Paper>
 
               <Paper
                 elevation={0}
                 sx={{
-                  p: 3,
+                  p: { xs: 2, sm: 3 },
                   borderRadius: 3,
                   border: `1px solid ${theme.palette.divider}`,
                   backgroundColor: "#fff",
@@ -1228,11 +1242,11 @@ const NFTOrderDetails: React.FC = () => {
                     {/* ESCROW / PAYMENT STATUS MESSAGES */}
 
                     {orderData.shippingDetails.verificationStatus === "pending" ? <>
-                      <Typography>
+                      <Typography sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                         Once the verification is complete the payment can be made and the ownership can be transfered respectively
                       </Typography>
                     </> : orderData.shippingDetails.verificationStatus === "approved" ? <>
-                      <Typography>
+                      <Typography sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                         Product has been successfully verified and the payment can be made and the ownership can be transfered respectively
                       </Typography>
                     </> : null}
@@ -1241,14 +1255,14 @@ const NFTOrderDetails: React.FC = () => {
                     {orderData.shippingDetails.verificationStatus === "approved" && (
                       <>
                         {orderData.paymentStatus === "unpaid" && orderData.orderStatus !== "pending" && (
-                          <Typography>
+                          <Typography sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                             Once the payment is made, it will be held in escrow until the ownership is transferred.
                           </Typography>
                         )}
                         {orderData.ownerId === userId &&
                           orderData.paymentStatus === "escrow" &&
                           orderData.ownershipTransferStatus === "pending" && (
-                            <Typography>
+                            <Typography sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                               Payment from the buyer is held in escrow and will be credited to your wallet when the ownership transfer is completed.
                             </Typography>
                           )}
@@ -1260,12 +1274,16 @@ const NFTOrderDetails: React.FC = () => {
 
                     {orderData.ownerId !== userId && orderData.paymentStatus === "escrow" && orderData.ownershipTransferStatus === "pending" && (
                       <>
-                          <Typography>Your payment is safe and held in escrow.</Typography>
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <Typography variant="body2" color="text.secondary">
-                              Payment Transaction Hash:
-                            </Typography>
-                            <Typography variant="body2">
+                        <Typography sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>Your payment is safe and held in escrow.</Typography>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
+                          <Typography variant="body2" color="text.secondary">
+                            Payment Transaction Hash:
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" sx={{
+                              wordBreak: 'break-all',
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                            }}>
                               {orderData.escrowTransaction.transaction_hash?.slice(0, 8)}...
                               {orderData.escrowTransaction.transaction_hash?.slice(-4)}
                             </Typography>
@@ -1277,18 +1295,19 @@ const NFTOrderDetails: React.FC = () => {
                                 <ContentCopyIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                          </Stack>
+                          </Box>
+                        </Stack>
                       </>
                     )}
 
                     {orderData.ownershipTransferStatus === "confirmed" && orderData.paymentStatus === "escrow" && (
-                      <Typography>
+                      <Typography sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                         Payment from escrow in progress. Please wait for confirmation.
                       </Typography>
                     )}
 
                     {orderData.paymentStatus === "paid" && orderData.ownershipTransferStatus === "confirmed" && (
-                      <Typography>
+                      <Typography sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                         Payment and ownership transfer have been successfully completed.
                       </Typography>
                     )}
@@ -1298,11 +1317,18 @@ const NFTOrderDetails: React.FC = () => {
                       && orderData.orderStatus === "processing"
                       && orderData.ownerId !== userId)
                       ? (
-                        <FormControl component="fieldset" sx={{ mt: 3, p: 3, borderRadius: 2, boxShadow: 3, backgroundColor: '#f9f9f9' }}>
-                          <Typography variant="h6" gutterBottom>
+                        <FormControl component="fieldset" sx={{
+                          mt: 3,
+                          p: { xs: 2, sm: 3 },
+                          borderRadius: 2,
+                          boxShadow: 3,
+                          backgroundColor: '#f9f9f9',
+                          width: '100%'
+                        }}>
+                          <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                             Swap Shipping (Platform-based) is available with product verification.
                           </Typography>
-                          <Typography variant="body1" gutterBottom>
+                          <Typography variant="body1" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                             You can either choose to buy the item yourself or opt for platform-based shipping.
                             <br />
                             Which is your preference?
@@ -1318,7 +1344,13 @@ const NFTOrderDetails: React.FC = () => {
                             <FormControlLabel value="self" control={<Radio />} label="Self Shipping" />
                           </RadioGroup>
 
-                          <Button variant="contained" color="primary" sx={{ mt: 3 }}
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            sx={{
+                              mt: 3,
+                              width: { xs: '100%', sm: 'auto' }
+                            }}
                             onClick={() => handleShippingMethodSubmit(selectedShippingMethod)}
                           >
                             Submit
@@ -1329,7 +1361,10 @@ const NFTOrderDetails: React.FC = () => {
                         && orderData.ownerId === userId
                       ) ? (<>
                         <Box sx={{ mt: 1 }}>
-                          <Typography variant="body1" fontWeight="medium" component="span" sx={{ ml: 1 }}>
+                          <Typography variant="body1" fontWeight="medium" component="span" sx={{
+                            ml: 1,
+                            fontSize: { xs: '0.875rem', sm: '1rem' }
+                          }}>
                             Swap Shipping (Platform-based) is available. waiting for confirmation from buyer.
                           </Typography>
                         </Box>
@@ -1351,19 +1386,25 @@ const NFTOrderDetails: React.FC = () => {
                           <Typography variant="body2" color="text.secondary" component="span">
                             Shipping Method:
                           </Typography>
-                          <Typography variant="body1" fontWeight="medium" component="span" sx={{ ml: 1 }}>
+                          <Typography variant="body1" fontWeight="medium" component="span" sx={{
+                            ml: 1,
+                            fontSize: { xs: '0.875rem', sm: '1rem' }
+                          }}>
                             {String(orderData.shippingDetails.shippingMethod).toUpperCase()}
                           </Typography>
                           {orderData.shippingDetails.shippingMethod === "swap" && <>
-
                             <Button
-                              sx={{ ml: 1 }}
+                              sx={{
+                                ml: { xs: 0, sm: 1 },
+                                mt: { xs: 1, sm: 0 },
+                                display: { xs: 'block', sm: 'inline-block' },
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                              }}
                               variant='outlined'
                               onClick={handleTrackingModal}
                             >
                               View shipping Routes
                             </Button>
-
                           </>}
                         </Box>
                       </>
@@ -1374,7 +1415,10 @@ const NFTOrderDetails: React.FC = () => {
                       <Typography variant="body2" color="text.secondary" component="span">
                         Price:
                       </Typography>
-                      <Typography variant="body1" fontWeight="medium" component="span" sx={{ ml: 1 }}>
+                      <Typography variant="body1" fontWeight="medium" component="span" sx={{
+                        ml: 1,
+                        fontSize: { xs: '0.875rem', sm: '1rem' }
+                      }}>
                         $ {Number(orderData.price).toFixed()}
                       </Typography>
                     </Box>
@@ -1382,48 +1426,58 @@ const NFTOrderDetails: React.FC = () => {
                     {/* PAYMENT HASHES & HUBS */}
                     {orderData.paymentStatus === "paid" && (
                       <Box sx={{ mt: 3 }}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
                           <Typography variant="body2" color="text.secondary">
                             Payment Transaction Hash:
                           </Typography>
-                          <Typography variant="body2">
-                            {orderData.escrowTransaction.transaction_hash?.slice(0, 8)}...
-                            {orderData.escrowTransaction.transaction_hash?.slice(-4)}
-                          </Typography>
-                          <Tooltip title={orderData.escrowTransaction.transaction_hash || 'No hash available'}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleCopy(orderData.escrowTransaction.transaction_hash, 'transactionHash')}
-                            >
-                              <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" sx={{
+                              wordBreak: 'break-all',
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                            }}>
+                              {orderData.escrowTransaction.transaction_hash?.slice(0, 8)}...
+                              {orderData.escrowTransaction.transaction_hash?.slice(-4)}
+                            </Typography>
+                            <Tooltip title={orderData.escrowTransaction.transaction_hash || 'No hash available'}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCopy(orderData.escrowTransaction.transaction_hash, 'transactionHash')}
+                              >
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
                         </Stack>
 
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1} sx={{ mt: 1 }}>
                           <Typography variant="body2" color="text.secondary">
                             Ownership Transfer Transaction Hash:
                           </Typography>
-                          <Typography variant="body2">
-                            {orderData.ownershipTransferTransaction.transactionHash?.slice(0, 8)}...
-                            {orderData.ownershipTransferTransaction.transactionHash?.slice(-4)}
-                          </Typography>
-                          <Tooltip title={orderData.ownershipTransferTransaction.transactionHash || 'No hash available'}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleCopy(orderData.ownershipTransferTransaction.transactionHash, 'transactionHash')}
-                            >
-                              <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" sx={{
+                              wordBreak: 'break-all',
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                            }}>
+                              {orderData.ownershipTransferTransaction.transactionHash?.slice(0, 8)}...
+                              {orderData.ownershipTransferTransaction.transactionHash?.slice(-4)}
+                            </Typography>
+                            <Tooltip title={orderData.ownershipTransferTransaction.transactionHash || 'No hash available'}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCopy(orderData.ownershipTransferTransaction.transactionHash, 'transactionHash')}
+                              >
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
                         </Stack>
 
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
-                          <Typography variant="body2">
+                          <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                             {orderData.shippingDetails.sourceHub.pincode || '-'}
                           </Typography>
                           <ArrowForwardIcon fontSize="small" />
-                          <Typography variant="body2">
+                          <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                             {orderData.shippingDetails.destinationHub.pincode || '-'}
                           </Typography>
                         </Stack>

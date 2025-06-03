@@ -235,14 +235,15 @@ const Register = () => {
       return;
     }
     try {
-      await PublicAPI.post(`verification/create/`, {
+      const otpResponse = await PublicAPI.post(`verification/create/`, {
         email: registerData.email,
       });
       setOpen(true);
       dispatch(setLoading(false));
       dispatch(setAlertOn(true));
       dispatch(setAlertSeverity("info"));
-      dispatch(setAlertMessage("OTP sent to email"));
+      dispatch(setAlertMessage("Kindly Check the console for otp"));
+      console.log("OTP: ", otpResponse.data.otp)
     } catch (error) {
       dispatch(setLoading(false));
       console.log(error);

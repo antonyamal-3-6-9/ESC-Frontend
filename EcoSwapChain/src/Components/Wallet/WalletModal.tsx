@@ -36,7 +36,9 @@ const WalletModal = () => {
           flexDirection: 'column'
         }}
       >
-        <Wallet />
+        <Wallet
+        onClose={handleClose}
+        />
       </Box>
     </Modal>
   )

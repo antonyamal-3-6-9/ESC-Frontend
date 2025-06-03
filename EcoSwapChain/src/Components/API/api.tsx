@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { dispatchAlert } from './apiHelper'
-const BASE_URL = 'https://mydomain.duckdns.org/'
+const BASE_URL = 'https://swapchain.duckdns.org/'
 
 // ✅ **Public API (No Authentication Needed)**
 export const PublicAPI = axios.create({

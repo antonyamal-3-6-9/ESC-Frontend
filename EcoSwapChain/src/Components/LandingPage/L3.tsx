@@ -10,17 +10,13 @@ import {
     Grid,
     IconButton,
     Typography,
-    TextField,
     Accordion,
     AccordionSummary,
     AccordionDetails,
-    Chip,
     Divider,
     Avatar,
     List,
     ListItem,
-    ListItemIcon,
-    ListItemText,
     Fade,
 } from '@mui/material'
 import {
@@ -33,7 +29,6 @@ import {
     PriceCheck,
     History,
     QuestionAnswer,
-    YouTube,
     Twitter,
     Facebook,
     Instagram,
@@ -45,12 +40,7 @@ import { Link } from 'react-router';
 import { useAppSelector } from '../../store';
 
 // Company logos for trust indicators
-const companyLogos = [
-    'https://via.placeholder.com/150x50',
-    'https://via.placeholder.com/150x50',
-    'https://via.placeholder.com/150x50',
-    'https://via.placeholder.com/150x50',
-];
+
 
 // Testimonial data
 const testimonials = [
@@ -94,47 +84,6 @@ const faqs = [
     },
 ];
 
-// Pricing plans
-const pricingPlans = [
-    {
-        title: 'Basic',
-        price: 'Free',
-        features: [
-            'Up to 5 NFT authentications',
-            'Basic product history',
-            'Standard verification process',
-            'Community support'
-        ],
-        recommended: false,
-        buttonText: 'Start Free'
-    },
-    {
-        title: 'Premium',
-        price: '$19.99/mo',
-        features: [
-            'Unlimited NFT authentications',
-            'Detailed product analytics',
-            'Priority verification',
-            'Dedicated support',
-            'API access'
-        ],
-        recommended: true,
-        buttonText: 'Go Premium'
-    },
-    {
-        title: 'Business',
-        price: '$49.99/mo',
-        features: [
-            'Everything in Premium',
-            'Bulk authentication',
-            'White-label solution',
-            'Custom integration',
-            '24/7 priority support'
-        ],
-        recommended: false,
-        buttonText: 'Contact Sales'
-    }
-];
 
 // Feature data
 const features = [
@@ -163,11 +112,6 @@ const features = [
         title: 'Lifetime Traceability',
         description: 'Track the complete lifecycle of your product, from manufacturing to current ownership.'
     },
-    {
-        icon: <CheckCircle fontSize="large" color="primary" />,
-        title: 'Quick Verification',
-        description: 'Instant verification process allows you to check authenticity in seconds.'
-    }
 ];
 
 // How it works steps
@@ -222,40 +166,7 @@ const LandingPageThree = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Animated number counter for statistics
 
-    type CounterData = {
-        targetNumber: string;
-        label: string;
-        duration?: number; // optional with default
-    };
-
-    const Counter = ({ targetNumber, label, duration = 2000 } : CounterData) => {
-        const [count, setCount] = useState(0);
-
-        useEffect(() => {
-            let start = 0;
-            const end = parseInt(targetNumber);
-            const incrementTime = (duration / end) * 1000;
-
-            const timer = setInterval(() => {
-                start += 1;
-                setCount(start);
-                if (start === end) clearInterval(timer);
-            }, incrementTime);
-
-            return () => clearInterval(timer);
-        }, [targetNumber, duration]);
-
-        return (
-            <Box textAlign="center">
-                <Typography variant="h2" color="primary" fontWeight="bold">
-                    {count.toLocaleString()}+
-                </Typography>
-                <Typography variant="body1">{label}</Typography>
-            </Box>
-        );
-    };
 
     return (
         <ThemeProvider theme={SwapTheme}>
@@ -410,29 +321,6 @@ const LandingPageThree = () => {
                                         </Button>
                                     </Box>
                                 </motion.div>
-
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 1.2, duration: 0.5 }}
-                                >
-                                    <Box sx={{ mt: 6 }}>
-                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                            TRUSTED BY INDUSTRY LEADERS
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mt: 1, opacity: 0.7 }}>
-                                            {companyLogos.map((logo, index) => (
-                                                <Box
-                                                    component="img"
-                                                    key={index}
-                                                    src={logo}
-                                                    alt={`Partner ${index + 1}`}
-                                                    sx={{ height: 30, filter: 'grayscale(100%)' }}
-                                                />
-                                            ))}
-                                        </Box>
-                                    </Box>
-                                </motion.div>
                             </Grid>
 
                             <Grid item xs={12} md={6}>
@@ -543,37 +431,6 @@ const LandingPageThree = () => {
                     </Container>
                 </Box>
 
-          
-
-                {/* Stats Counter Section */}
-                <Box sx={{ py: 8, bgcolor: SwapTheme.palette.gradient.primary }}>
-                    <Container>
-                        <motion.div
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                            variants={staggerContainer}
-                        >
-                            <Grid container spacing={4} justifyContent="center">
-                                <Grid item xs={12} sm={4}>
-                                    <motion.div variants={fadeInUp}>
-                                        <Counter targetNumber="10000" label="NFTs Created" />
-                                    </motion.div>
-                                </Grid>
-                                <Grid item xs={12} sm={4}>
-                                    <motion.div variants={fadeInUp}>
-                                        <Counter targetNumber="2500" label="Active Users" />
-                                    </motion.div>
-                                </Grid>
-                                <Grid item xs={12} sm={4}>
-                                    <motion.div variants={fadeInUp}>
-                                        <Counter targetNumber="98" label="Satisfaction Rate %" />
-                                    </motion.div>
-                                </Grid>
-                            </Grid>
-                        </motion.div>
-                    </Container>
-                </Box>
 
                 {/* Features Section */}
                 <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.paper' }}>
@@ -792,13 +649,7 @@ const LandingPageThree = () => {
                                     ))}
 
                                     <Box sx={{ mt: 6 }}>
-                                        <Button
-                                            variant="gradient"
-                                            size="large"
-                                            endIcon={<ArrowForward />}
-                                        >
-                                            Start Authentication Process
-                                        </Button>
+                        
                                     </Box>
                                 </motion.div>
                             </Grid>
@@ -806,124 +657,7 @@ const LandingPageThree = () => {
                     </Container>
                 </Box>
 
-                {/* Demo Section */}
-                <Box
-                    sx={{
-                        py: { xs: 8, md: 12 },
-                        bgcolor: 'background.paper',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        '&::before': {
-                            content: '""',
-                            position: 'absolute',
-                            top: -100,
-                            right: -100,
-                            width: 300,
-                            height: 300,
-                            borderRadius: '50%',
-                            background: SwapTheme.palette.gradient.primary,
-                            opacity: 0.1
-                        },
-                        '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -100,
-                            left: -100,
-                            width: 200,
-                            height: 200,
-                            borderRadius: '50%',
-                            background: SwapTheme.palette.gradient.secondary,
-                            opacity: 0.1
-                        }
-                    }}
-                >
-                    <Container>
-                        <Grid container spacing={6} alignItems="center">
-                            <Grid item xs={12} md={5}>
-                                <motion.div
-                                    initial="hidden"
-                                    whileInView="visible"
-                                    viewport={{ once: true }}
-                                    variants={fadeInUp}
-                                >
-                                    <Typography variant="overline" color="primary" fontWeight="bold">
-                                        SEE IT IN ACTION
-                                    </Typography>
-                                    <Typography variant="h2" component="h2" sx={{ mb: 2 }}>
-                                        Interactive Product Verification Demo
-                                    </Typography>
-                                    <Typography variant="body1" color="text.secondary" paragraph>
-                                        Try our authentication system yourself. See how easy it is to verify product authenticity and ownership history with our blockchain-powered solution.
-                                    </Typography>
-
-                                    <Box sx={{ mt: 4 }}>
-                                        <TextField
-                                            fullWidth
-                                            label="Enter Product ID or Scan QR Code"
-                                            variant="outlined"
-                                            sx={{ mb: 2 }}
-                                        />
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            size="large"
-                                            fullWidth
-                                        >
-                                            Verify Product
-                                        </Button>
-                                    </Box>
-                                </motion.div>
-                            </Grid>
-
-                            <Grid item xs={12} md={7}>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.6 }}
-                                >
-                                    <Box sx={{ position: 'relative' }}>
-                                        <Box
-                                            component="img"
-                                            src="https://via.placeholder.com/600x400?text=Authentication+Demo"
-                                            alt="Product Authentication Demo"
-                                            sx={{
-                                                width: '100%',
-                                                borderRadius: 4,
-                                                boxShadow: 3
-                                            }}
-                                        />
-                                        <Box
-                                            sx={{
-                                                position: 'absolute',
-                                                top: '50%',
-                                                left: '50%',
-                                                transform: 'translate(-50%, -50%)',
-                                                bgcolor: 'rgba(0, 0, 0, 0.3)',
-                                                borderRadius: '50%',
-                                                width: 80,
-                                                height: 80,
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <Box
-                                                component={YouTube}
-                                                sx={{
-                                                    color: 'white',
-                                                    fontSize: 40
-                                                }}
-                                            />
-                                        </Box>
-                                    </Box>
-                                </motion.div>
-                            </Grid>
-                        </Grid>
-                    </Container>
-                </Box>
-
+            
                 {/* Testimonials Section */}
                 <Box sx={{ py: { xs: 8, md: 12 } }}>
                     <Container>
@@ -993,111 +727,7 @@ const LandingPageThree = () => {
                     </Container>
                 </Box>
 
-                {/* Pricing Section */}
-                <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.paper' }}>
-                    <Container>
-                        <Box sx={{ textAlign: 'center', mb: 8 }}>
-                            <Typography variant="overline" color="primary" fontWeight="bold">
-                                PRICING PLANS
-                            </Typography>
-                            <Typography variant="h2" component="h2" sx={{ mb: 2 }}>
-                                Choose Your Plan
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 700, mx: 'auto' }}>
-                                Flexible plans to meet the needs of individual collectors and businesses of all sizes.
-                            </Typography>
-                        </Box>
-
-                        <Grid container spacing={4} alignItems="center">
-                            {pricingPlans.map((plan, index) => (
-                                <Grid item xs={12} md={4} key={index}>
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 30 }}
-                                        whileInView={{ opacity: 1, y: 0 }}
-                                        viewport={{ once: true }}
-                                        transition={{ duration: 0.5, delay: index * 0.1 }}
-                                    >
-                                        <Card
-                                            sx={{
-                                                height: '100%',
-                                                position: 'relative',
-                                                transform: plan.recommended ? 'scale(1.05)' : 'none',
-                                                boxShadow: plan.recommended ? 5 : 1,
-                                                zIndex: plan.recommended ? 2 : 1,
-                                                border: plan.recommended ? '2px solid' : 'none',
-                                                borderColor: 'primary.main',
-                                                transition: 'all 0.3s',
-                                                '&:hover': {
-                                                    transform: plan.recommended ? 'scale(1.07)' : 'scale(1.02)',
-                                                    boxShadow: plan.recommended ? 6 : 2
-                                                }
-                                            }}
-                                        >
-                                            {plan.recommended && (
-                                                <Box
-                                                    sx={{
-                                                        position: 'absolute',
-                                                        top: -15,
-                                                        right: 0,
-                                                        left: 0,
-                                                        textAlign: 'center'
-                                                    }}
-                                                >
-                                                    <Chip
-                                                        label="RECOMMENDED"
-                                                        color="primary"
-                                                        sx={{
-                                                            fontSize: '0.8rem',
-                                                            fontWeight: 'bold',
-                                                            background: SwapTheme.palette.gradient.secondary
-                                                        }}
-                                                    />
-                                                </Box>
-                                            )}
-                                            <CardContent sx={{ p: 4 }}>
-                                                <Typography variant="h4" component="h3" gutterBottom sx={{ textAlign: 'center' }}>
-                                                    {plan.title}
-                                                </Typography>
-                                                <Typography
-                                                    variant="h3"
-                                                    color="primary"
-                                                    sx={{
-                                                        textAlign: 'center',
-                                                        fontWeight: 'bold',
-                                                        my: 3
-                                                    }}
-                                                >
-                                                    {plan.price}
-                                                </Typography>
-                                                <Divider sx={{ my: 3 }} />
-                                                <List>
-                                                    {plan.features.map((feature, featureIndex) => (
-                                                        <ListItem key={featureIndex} disableGutters sx={{ py: 1 }}>
-                                                            <ListItemIcon sx={{ minWidth: 'auto', mr: 2 }}>
-                                                                <CheckCircle color="primary" fontSize="small" />
-                                                            </ListItemIcon>
-                                                            <ListItemText primary={feature} />
-                                                        </ListItem>
-                                                    ))}
-                                                </List>
-                                                <Box sx={{ mt: 4, textAlign: 'center' }}>
-                                                    <Button
-                                                        variant={plan.recommended ? 'gradient' : 'outlined'}
-                                                        color="primary"
-                                                        size="large"
-                                                        fullWidth
-                                                    >
-                                                        {plan.buttonText}
-                                                    </Button>
-                                                </Box>
-                                            </CardContent>
-                                        </Card>
-                                    </motion.div>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Container>
-                </Box>
+            
 
                 {/* FAQ Section */}
                 <Box sx={{ py: { xs: 8, md: 12 } }}>
@@ -1258,23 +888,7 @@ const LandingPageThree = () => {
                                         >
                                             Get Started For Free
                                         </Button>
-                                        <Button
-                                            variant="outlined"
-                                            size="large"
-                                            sx={{
-                                                borderColor: 'white',
-                                                color: 'white',
-                                                px: 4,
-                                                py: 1.5,
-                                                fontSize: '1.1rem',
-                                                '&:hover': {
-                                                    borderColor: 'white',
-                                                    bgcolor: 'rgba(255, 255, 255, 0.1)'
-                                                }
-                                            }}
-                                        >
-                                            Request Demo
-                                        </Button>
+                                       
                                     </Box>
                                 </motion.div>
                             </Grid>

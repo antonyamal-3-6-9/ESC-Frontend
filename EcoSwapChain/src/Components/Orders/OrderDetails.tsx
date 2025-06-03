@@ -355,8 +355,8 @@ const NFTOrderDetails: React.FC = () => {
     }
   }, [messages]);
 
-  const socketChatUrl = `ws://127.0.0.1:8000/ws/chat/${id}/`;
-  const socketUpdateUrl = `ws://127.0.0.1:8000/ws/updates/${id}/`
+  const socketChatUrl = `ws://swapchain.duckdns.org/ws/chat/${id}/`;
+  const socketUpdateUrl = `ws://swapchain.duckdns.org/ws/updates/${id}/`
 
   const [socket, setSocket] = useState<WebSocket | null>(null);
 
@@ -753,7 +753,7 @@ const NFTOrderDetails: React.FC = () => {
               >
                 <Box
                   component="img"
-                  src={`http://localhost:8000${orderData.nftImageUrl}`}
+                  src={`https://swapchain.duckdns.org${orderData.nftImageUrl}`}
                   alt={orderData.nftName}
                   sx={{
                     width: '100%',

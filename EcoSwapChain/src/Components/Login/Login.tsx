@@ -154,7 +154,7 @@ const Login = () => {
 
       <Box
         sx={{
-          minHeight: "100vh",
+          minHeight: "80vh",
           backgroundColor: "#F6F4F0",
           background: {
             xs: `linear-gradient(135deg, #F6F4F0 0%, #e8e4df 100%)`,
@@ -220,29 +220,6 @@ const Login = () => {
             py: { xs: 0, md: 4 }
           }}
         >
-          {/* Desktop title */}
-          {!isMobile && (
-            <Fade in timeout={600}>
-              <Typography
-                variant="h3"
-                gutterBottom
-                sx={{
-                  color: "#2E5077",
-                  textAlign: "center",
-                  position: 'absolute',
-                  top: { md: 40, lg: 30 },
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  fontWeight: 800,
-                  letterSpacing: 3,
-                  textTransform: 'uppercase',
-                  fontSize: { md: '2.5rem', lg: '3rem' },
-                }}
-              >
-                Sign In
-              </Typography>
-            </Fade>
-          )}
 
           <Paper
             elevation={isMobile ? 0 : 8}

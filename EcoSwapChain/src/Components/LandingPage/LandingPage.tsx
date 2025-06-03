@@ -8,6 +8,7 @@ import Grid from '@mui/material/Grid2'
 import { Hero } from './Hero'
 import { Stats } from './Stats'
 
+
 const LandingPage = () => {
   
   const [checked, setChecked] = useState(false)

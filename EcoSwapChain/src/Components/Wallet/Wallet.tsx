@@ -205,7 +205,7 @@ const Wallet: React.FC<WalletProps> = ({ onClose }) => {
   useEffect(() => {
     if (!walletData.public_key) return; // Don't connect until public_key is available
 
-    const socketUrl = `ws://swapchain.duckdns.org/ws/transaction/${walletData.public_key}/`;
+    const socketUrl = `wss://swapchain.duckdns.org/ws/transaction/${walletData.public_key}/`;
     const socket = new WebSocket(socketUrl);
 
     socket.onopen = () => {
